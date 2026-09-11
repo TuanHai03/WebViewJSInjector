@@ -40,17 +40,103 @@
             icon: "fa-terminal",
             buttons: [
                 {
-                    id: "mod-fix-login",
-                    icon: "fa-terminal",
-                    label: "Fix-Login",
-                    fn: (MOD) => {
-                app.net.networkManagerXHR.defaultDomains =
-                app.net.networkManagerXHR.defaultDomains.filter(
-                    x => x !== "https://sangtacviet.com"
-                    );
- console.log(app.net.networkManagerXHR.defaultDomains);
-                    }
-                },
+    id: "mod-fix-login",
+    icon: "fa-terminal",
+    label: "Fix-Login",
+
+    fn: (MOD) => {
+
+        try {
+
+            console.log(
+                "[MOD] networkManagerXHR:",
+                app?.net?.networkManagerXHR
+            );
+
+
+            const nm =
+                app?.net?.networkManagerXHR;
+
+
+            if (!nm) {
+
+                console.error(
+                    "[MOD] Không tìm thấy app.net.networkManagerXHR"
+                );
+
+                MOD.status(
+                    "Không tìm thấy networkManagerXHR"
+                );
+
+                return;
+            }
+
+
+            console.log(
+                "[MOD] defaultDomains trước:",
+                nm.defaultDomains
+            );
+
+
+            if (!Array.isArray(nm.defaultDomains)) {
+
+                console.error(
+                    "[MOD] defaultDomains không phải Array:",
+                    nm.defaultDomains
+                );
+
+                MOD.status(
+                    "defaultDomains không phải Array"
+                );
+
+                return;
+            }
+
+
+            const before =
+                nm.defaultDomains.length;
+
+
+            nm.defaultDomains =
+                nm.defaultDomains.filter(
+                    x =>
+                        x !==
+                        "https://sangtacviet.com"
+                );
+
+
+            const after =
+                nm.defaultDomains.length;
+
+
+            console.log(
+                "[MOD] defaultDomains sau:",
+                nm.defaultDomains
+            );
+
+
+            console.log(
+                `[MOD] Đã xóa ${before - after} domain`
+            );
+
+
+            MOD.status(
+                `Fix-Login OK - đã xóa ${before - after} domain`
+            );
+
+        } catch (error) {
+
+            console.error(
+                "[MOD] Fix-Login lỗi:",
+                error
+            );
+
+            MOD.status(
+                "Fix-Login lỗi: " + error.message
+            );
+        }
+    }
+},
                 {
                     id: "mod-console-test",
                     icon: "fa-terminal",
