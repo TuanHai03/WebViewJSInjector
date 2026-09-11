@@ -48,7 +48,7 @@
                 app.net.networkManagerXHR.defaultDomains.filter(
                     x => x !== "https://sangtacviet.com"
                     );
-
+ console.log(app.net.networkManagerXHR.defaultDomains);
                     }
                 },
                 {
