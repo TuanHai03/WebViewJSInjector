@@ -341,116 +341,162 @@
         // STYLE
         // =====================================================
 
-        createStyle() {
+       createStyle() {
+    const style = document.createElement("style");
+    style.id = this.styleId;
 
-            const style =
-                document.createElement("style");
+    style.textContent = `
+        #${this.tabId} {
+            width: 100%;
+            height: 100%;
+            box-sizing: border-box;
+            overflow: auto;
+            position: relative;
+            background: var(--mod-bg, #f5f5f5);
+            color: var(--mod-text, #222);
+        }
 
-            style.id = this.styleId;
+        #${this.tabId} .mod-page {
+            width: 100%;
+            min-height: 100%;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            background: var(--mod-bg, #f5f5f5);
+            color: var(--mod-text, #222);
+        }
 
-            style.textContent = `
+        #${this.tabId} .mod-header {
+            height: 55px;
+            min-height: 55px;
+            display: flex;
+            align-items: center;
+            box-sizing: border-box;
+            background: #333;
+            color: #fff;
+        }
 
-                #${this.tabId} {
-                    width: 100%;
-                    height: 100%;
-                    box-sizing: border-box;
-                    overflow: auto;
-                    position: relative;
-                    background: #f5f5f5;
-                }
+        #${this.tabId} .mod-back {
+            width: 55px;
+            height: 55px;
+            min-width: 55px;
+            border: 0;
+            background: transparent;
+            color: #fff;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }
 
-                #${this.tabId} .mod-page {
-                    width: 100%;
-                    height: 100%;
-                    box-sizing: border-box;
-                    display: flex;
-                    flex-direction: column;
-                    background: #f5f5f5;
-                }
+        #${this.tabId} .mod-back:active {
+            background: rgba(255,255,255,.15);
+        }
 
-                #${this.tabId} .mod-header {
-                    height: 55px;
-                    min-height: 55px;
-                    display: flex;
-                    align-items: center;
-                    box-sizing: border-box;
-                    background: #333;
-                    color: white;
-                }
+        #${this.tabId} .mod-title {
+            flex: 1;
+            font-size: 18px;
+            font-weight: bold;
+            color: #fff !important;
+        }
 
-                #${this.tabId} .mod-back {
-                    width: 55px;
-                    height: 55px;
-                    border: 0;
-                    background: transparent;
-                    color: white;
-                    font-size: 20px;
-                    display: flex;
-                    align-items: center;
-                    justify-content: center;
-                    cursor: pointer;
-                }
+        #${this.tabId} .mod-content {
+            flex: 1;
+            overflow: auto;
+            box-sizing: border-box;
+            padding: 15px;
+            background: var(--mod-bg, #f5f5f5);
+        }
 
-                #${this.tabId} .mod-back:active {
-                    background: rgba(255,255,255,.15);
-                }
+        #${this.tabId} .mod-card {
+            background: var(--mod-card-bg, #fff);
+            color: var(--mod-text, #222);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 12px;
+            box-sizing: border-box;
+            box-shadow: 0 2px 5px rgba(0,0,0,.12);
+        }
 
-                #${this.tabId} .mod-title {
-                    flex: 1;
-                    font-size: 18px;
-                    font-weight: bold;
-                }
+        #${this.tabId} .mod-card-title {
+            display: block;
+            width: 100%;
+            color: var(--mod-title, #222) !important;
+            font-size: 16px;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
 
-                #${this.tabId} .mod-content {
-                    flex: 1;
-                    overflow: auto;
-                    box-sizing: border-box;
-                    padding: 15px;
-                }
+        #${this.tabId} .mod-card-title i {
+            color: inherit !important;
+            margin-right: 6px;
+        }
 
-                #${this.tabId} .mod-card {
-                    background: white;
-                    border-radius: 8px;
-                    padding: 15px;
-                    margin-bottom: 12px;
-                    box-sizing: border-box;
-                    box-shadow: 0 2px 5px rgba(0,0,0,.12);
-                }
+        #${this.tabId} .mod-button {
+            display: block;
+            width: 100%;
+            box-sizing: border-box;
+            padding: 12px;
+            margin-top: 7px;
+            border: 0;
+            border-radius: 6px;
+            background: var(--mod-button-bg, #eee);
+            color: var(--mod-button-text, #222) !important;
+            text-align: left;
+            font-size: 14px;
+            cursor: pointer;
+        }
 
-                #${this.tabId} .mod-card-title {
-                    font-size: 16px;
-                    font-weight: bold;
-                    margin-bottom: 10px;
-                }
+        #${this.tabId} .mod-button i {
+            color: inherit !important;
+            margin-right: 6px;
+        }
 
-                #${this.tabId} .mod-button {
-                    display: block;
-                    width: 100%;
-                    box-sizing: border-box;
-                    padding: 12px;
-                    margin-top: 7px;
-                    border: 0;
-                    border-radius: 6px;
-                    background: #eee;
-                    text-align: left;
-                    font-size: 14px;
-                    cursor: pointer;
-                }
+        #${this.tabId} .mod-button:active {
+            transform: scale(.98);
+        }
 
-                #${this.tabId} .mod-button:active {
-                    transform: scale(.98);
-                }
+        #${this.tabId} .mod-status {
+            font-size: 13px;
+            color: var(--mod-status, #777) !important;
+            word-break: break-word;
+        }
 
-                #${this.tabId} .mod-status {
-                    font-size: 13px;
-                    color: #777;
-                    word-break: break-word;
-                }
+        /* DARK MODE */
+        @media (prefers-color-scheme: dark) {
+            #${this.tabId} {
+                --mod-bg: #121212;
+                --mod-card-bg: #1e1e1e;
+                --mod-text: #eeeeee;
+                --mod-title: #ffffff;
+                --mod-button-bg: #2a2a2a;
+                --mod-button-text: #eeeeee;
+                --mod-status: #aaaaaa;
+            }
 
-            `;
+            #${this.tabId} .mod-card {
+                box-shadow: 0 2px 6px rgba(0,0,0,.4);
+            }
+        }
 
-            document.head.appendChild(style);
-        },
+        /* Nếu Web dùng class dark */
+        body.dark #${this.tabId},
+        body.dark-mode #${this.tabId},
+        html.dark #${this.tabId},
+        html.dark-mode #${this.tabId} {
+            --mod-bg: #121212;
+            --mod-card-bg: #1e1e1e;
+            --mod-text: #eeeeee;
+            --mod-title: #ffffff;
+            --mod-button-bg: #2a2a2a;
+            --mod-button-text: #eeeeee;
+            --mod-status: #aaaaaa;
+        }
+    `;
+
+    document.head.appendChild(style);
+},
 
 
         // =====================================================
