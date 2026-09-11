@@ -42,7 +42,7 @@
                 {
     id: "mod-fix-login",
     icon: "fa-terminal",
-    label: "Fix-Login",
+    label: "Fix Login",
 
     fn: (MOD) => {
 
