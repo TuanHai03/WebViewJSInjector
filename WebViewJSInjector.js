@@ -320,6 +320,16 @@
             }
 
 
+            // Đảm bảo maintabdiv có position để tab MOD (position:absolute)
+            // được định vị đúng theo nó, không bị "văng" ra ngoài theo
+            // một ancestor khác (gây lệch/che UI khi mở MOD).
+            const mtdPosition =
+                getComputedStyle(maintabdiv).position;
+
+            if (mtdPosition === "static") {
+                maintabdiv.style.position = "relative";
+            }
+
             this.createStyle();
 
             this.createTab(maintabdiv);
@@ -635,6 +645,8 @@
         // RESIZE NAVBAR ITEM
         // =====================================================
 
+        resizeTabsStyleId: "mod-navbar-resize-style",
+
         resizeTabs(maintabdiv) {
 
             this.container = maintabdiv;
@@ -656,25 +668,49 @@
 
             const itemCount = items.length;
 
-            const width = `${100 / itemCount}%`;
+            const widthPct = 100 / itemCount;
 
-            items.forEach(item => {
-                item.style.width = width;
-                item.style.minWidth = width;
-                item.style.maxWidth = width;
-                item.style.flex = `0 0 ${width}`;
-                item.style.boxSizing = "border-box";
-            });
+            // -----------------------------------------------------
+            // QUAN TRỌNG: không set item.style.xxx trực tiếp trên
+            // từng tabitem có sẵn nữa.
+            //
+            // Lý do: nhiều app build sẵn CSS cho #mainnavbar tabitem
+            // với "width/flex ... !important". Inline style (kể cả
+            // set qua JS) KHÔNG thắng được CSS có !important, nên
+            // 4 tab cũ vẫn giữ nguyên width cũ (vd 25%) trong khi tab
+            // MOD chen thêm vào => tổng > 100% => navbar bị vỡ / tràn
+            // / tab bị đè lên nhau. Đó thường là nguyên nhân chính
+            // gây "lỗi UI" khi MOD đổi style tab.
+            //
+            // Cách chắc chắn thắng được CSS gốc (kể cả khi nó có
+            // !important): tự chèn 1 thẻ <style> riêng, cũng dùng
+            // !important, với selector đủ cụ thể (#mainnavbar).
+            // Thẻ <style> được thêm vào <head> sau cùng nên khi độ
+            // ưu tiên (specificity + important) bằng nhau, luật của
+            // MOD sẽ được áp dụng sau và thắng.
+            // -----------------------------------------------------
 
-            if (this.navItem) {
-                this.navItem.style.width = width;
-                this.navItem.style.minWidth = width;
-                this.navItem.style.maxWidth = width;
-                this.navItem.style.flex = `0 0 ${width}`;
+            let resizeStyle =
+                document.getElementById(this.resizeTabsStyleId);
+
+            if (!resizeStyle) {
+                resizeStyle = document.createElement("style");
+                resizeStyle.id = this.resizeTabsStyleId;
+                document.head.appendChild(resizeStyle);
             }
 
+            resizeStyle.textContent = `
+                #mainnavbar > tabitem {
+                    width: ${widthPct}% !important;
+                    min-width: ${widthPct}% !important;
+                    max-width: ${widthPct}% !important;
+                    flex: 0 0 ${widthPct}% !important;
+                    box-sizing: border-box !important;
+                }
+            `;
+
             console.log(
-                `[MOD] Navbar: ${itemCount} tab, mỗi tab ${width}`
+                `[MOD] Navbar: ${itemCount} tab, mỗi tab ${widthPct}%`
             );
         },
 
@@ -702,6 +738,13 @@
                 .addEventListener("click", () => {
                     this.goBack();
                 });
+
+            // Tính lại width navbar khi xoay màn hình / đổi kích
+            // thước, phòng trường hợp app tự thêm/bớt tabitem sau
+            // này khiến rule cũ (tính lúc init) không còn đúng nữa.
+            window.addEventListener("resize", () => {
+                this.resizeTabs(this.container);
+            });
 
             // Gắn tất cả nút định nghĩa trong BUTTON_GROUPS
             BUTTON_GROUPS.forEach(group => {
@@ -818,6 +861,7 @@
             this.tab?.remove();
             this.navItem?.remove();
             document.getElementById(this.styleId)?.remove();
+            document.getElementById(this.resizeTabsStyleId)?.remove();
 
             console.log("[MOD] Removed");
         }
