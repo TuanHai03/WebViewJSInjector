@@ -318,27 +318,13 @@
                 console.log("[MOD] Đã tồn tại");
                 return;
             }
-
-
-            // Đảm bảo maintabdiv có position để tab MOD (position:absolute)
-            // được định vị đúng theo nó, không bị "văng" ra ngoài theo
-            // một ancestor khác (gây lệch/che UI khi mở MOD).
-            const mtdPosition =
-                getComputedStyle(maintabdiv).position;
-
-            if (mtdPosition === "static") {
-                maintabdiv.style.position = "relative";
-            }
-
             this.createStyle();
 
-            this.createTab(maintabdiv);
+            this.createTab();
 
             this.createNavbar(navbar);
 
             this.bindEvents();
-
-            this.resizeTabs(maintabdiv);
 
             console.log(
                 "%c[MOD] Tab 5 đã được tạo",
@@ -539,71 +525,53 @@
         // CREATE MOD TAB
         // =====================================================
 
-        createTab(maintabdiv) {
+        createTab() {
+    const tab = document.createElement("div");
 
-            const tab =
-                document.createElement("tabview");
+    tab.id = this.tabId;
 
-            tab.id = this.tabId;
+    const groupsHtml =
+        BUTTON_GROUPS
+            .map(group => this.renderGroup(group))
+            .join("");
 
+    tab.innerHTML = `
+        <div class="mod-page">
 
-            const groupsHtml =
-                BUTTON_GROUPS
-                    .map(group => this.renderGroup(group))
-                    .join("");
+            <div class="mod-header">
+                <button class="mod-back" id="mod-go-back">
+                    <i class="fas fa-arrow-left"></i>
+                </button>
 
-
-            tab.innerHTML = `
-
-                <div class="mod-page">
-
-                    <!-- HEADER -->
-                    <div class="mod-header">
-
-                        <button class="mod-back" id="mod-go-back">
-                            <i class="fas fa-arrow-left"></i>
-                        </button>
-
-                        <div class="mod-title">
-                            <i class="fas fa-tools"></i>
-                            MOD
-                        </div>
-
-                    </div>
-
-                    <!-- CONTENT (sinh tự động từ BUTTON_GROUPS) -->
-                    <div class="mod-content">
-
-                        ${groupsHtml}
-
-                        <!-- STATUS -->
-                        <div class="mod-card">
-                            <div class="mod-card-title">
-                                <i class="fas fa-info-circle"></i>
-                                Status
-                            </div>
-
-                            <div class="mod-status" id="mod-status">
-                                MOD sẵn sàng
-                            </div>
-                        </div>
-
-                    </div>
-
+                <div class="mod-title">
+                    <i class="fas fa-tools"></i>
+                    MOD
                 </div>
+            </div>
 
-            `;
+            <div class="mod-content">
+                ${groupsHtml}
 
+                <div class="mod-card">
+                    <div class="mod-card-title">
+                        <i class="fas fa-info-circle"></i>
+                        Status
+                    </div>
 
-            /*
-             * Thêm vào maintabdiv.
-             * Không đụng 4 tab cũ.
-             */
+                    <div class="mod-status" id="mod-status">
+                        MOD sẵn sàng
+                    </div>
+                </div>
+            </div>
 
-            maintabdiv.appendChild(tab);
+        </div>
+    `;
 
-            this.tab = tab;
-        },
+    // KHÔNG append vào maintabdiv
+    document.body.appendChild(tab);
+
+    this.tab = tab;
+},
 
 
         // =====================================================
@@ -612,107 +580,32 @@
 
         createNavbar(navbar) {
 
-            const item =
-                document.createElement("tabitem");
+    const item = document.createElement("tabitem");
 
-            item.id = this.navId;
+    item.id = this.navId;
 
-            const firstItem =
-                navbar.querySelector("tabitem");
+    const firstItem =
+        navbar.querySelector("tabitem");
 
-            if (firstItem) {
-                item.className = firstItem.className;
-            } else {
-                item.className =
-                    "iconbtn waves-effect waves-light";
-            }
+    if (firstItem) {
+        item.className = firstItem.className;
+    } else {
+        item.className =
+            "iconbtn waves-effect waves-light";
+    }
 
-            // Xóa active nếu bị copy từ tab gốc
-            item.classList.remove("active");
+    item.classList.remove("active");
 
-            item.innerHTML = `
-                <i class="fas fa-tools"></i>
-                <text>MOD</text>
-            `;
+    item.innerHTML = `
+        <i class="fas fa-tools"></i>
+        <text>MOD</text>
+    `;
 
-            navbar.appendChild(item);
+    navbar.appendChild(item);
 
-            this.navItem = item;
-        },
+    this.navItem = item;
+},
 
-
-        // =====================================================
-        // RESIZE NAVBAR ITEM
-        // =====================================================
-
-        resizeTabsStyleId: "mod-navbar-resize-style",
-
-        resizeTabs(maintabdiv) {
-
-            this.container = maintabdiv;
-
-            const navbar =
-                document.getElementById("mainnavbar");
-
-            if (!navbar) {
-                console.warn("[MOD] Không tìm thấy #mainnavbar");
-                return;
-            }
-
-            const items =
-                Array.from(navbar.querySelectorAll("tabitem"));
-
-            if (items.length === 0) {
-                return;
-            }
-
-            const itemCount = items.length;
-
-            const widthPct = 100 / itemCount;
-
-            // -----------------------------------------------------
-            // QUAN TRỌNG: không set item.style.xxx trực tiếp trên
-            // từng tabitem có sẵn nữa.
-            //
-            // Lý do: nhiều app build sẵn CSS cho #mainnavbar tabitem
-            // với "width/flex ... !important". Inline style (kể cả
-            // set qua JS) KHÔNG thắng được CSS có !important, nên
-            // 4 tab cũ vẫn giữ nguyên width cũ (vd 25%) trong khi tab
-            // MOD chen thêm vào => tổng > 100% => navbar bị vỡ / tràn
-            // / tab bị đè lên nhau. Đó thường là nguyên nhân chính
-            // gây "lỗi UI" khi MOD đổi style tab.
-            //
-            // Cách chắc chắn thắng được CSS gốc (kể cả khi nó có
-            // !important): tự chèn 1 thẻ <style> riêng, cũng dùng
-            // !important, với selector đủ cụ thể (#mainnavbar).
-            // Thẻ <style> được thêm vào <head> sau cùng nên khi độ
-            // ưu tiên (specificity + important) bằng nhau, luật của
-            // MOD sẽ được áp dụng sau và thắng.
-            // -----------------------------------------------------
-
-            let resizeStyle =
-                document.getElementById(this.resizeTabsStyleId);
-
-            if (!resizeStyle) {
-                resizeStyle = document.createElement("style");
-                resizeStyle.id = this.resizeTabsStyleId;
-                document.head.appendChild(resizeStyle);
-            }
-
-            resizeStyle.textContent = `
-                #mainnavbar > tabitem {
-                    width: ${widthPct}% !important;
-                    min-width: ${widthPct}% !important;
-                    max-width: ${widthPct}% !important;
-                    flex: 0 0 ${widthPct}% !important;
-                    box-sizing: border-box !important;
-                }
-            `;
-
-            console.log(
-                `[MOD] Navbar: ${itemCount} tab, mỗi tab ${widthPct}%`
-            );
-        },
 
 
         // =====================================================
@@ -739,14 +632,7 @@
                     this.goBack();
                 });
 
-            // Tính lại width navbar khi xoay màn hình / đổi kích
-            // thước, phòng trường hợp app tự thêm/bớt tabitem sau
-            // này khiến rule cũ (tính lúc init) không còn đúng nữa.
-            window.addEventListener("resize", () => {
-                this.resizeTabs(this.container);
-            });
-
-            // Gắn tất cả nút định nghĩa trong BUTTON_GROUPS
+             // Gắn tất cả nút định nghĩa trong BUTTON_GROUPS
             BUTTON_GROUPS.forEach(group => {
 
                 group.buttons.forEach(btn => {
@@ -785,14 +671,6 @@
             }
 
             this.navItem.classList.add("active");
-
-            this.navbar =
-                document.getElementById("mainnavbar");
-
-            if (this.navbar) {
-                this.navbar.style.display = "none";
-            }
-
             this.tab.style.position = "absolute";
             this.tab.style.left = "0";
             this.tab.style.top = "0";
@@ -824,10 +702,7 @@
             this.tab.style.height = "";
             this.tab.style.zIndex = "";
 
-            if (this.navbar) {
-                this.navbar.style.display = "";
-            }
-
+           
             this.navItem.classList.remove("active");
 
             console.log(
@@ -861,8 +736,6 @@
             this.tab?.remove();
             this.navItem?.remove();
             document.getElementById(this.styleId)?.remove();
-            document.getElementById(this.resizeTabsStyleId)?.remove();
-
             console.log("[MOD] Removed");
         }
     };
