@@ -4,92 +4,54 @@
     class EpubBuilder {
 
         constructor(options = {}) {
-            this.options = options;
-
+            this.options = options || {};
             this.imageCounter = 0;
         }
 
-        /**
-         * Reset trạng thái khi bắt đầu tạo một EPUB mới.
-         */
+        // =========================================================
+        // RESET
+        // =========================================================
+
         reset() {
             this.imageCounter = 0;
         }
+
 
         // =========================================================
         // BASE FILES
         // =========================================================
 
-        /**
-         * Tạo toàn bộ các file cơ bản của EPUB.
-         *
-         * Không tạo chapter.
-         * Không tạo ZIP.
-         * Không download.
-         *
-         * @param {Object} book
-         * @param {Array} chapterInfos
-         * @returns {Object}
-         */
         createBaseFiles(book, chapterInfos = []) {
 
             this.reset();
 
-            const files = [];
-
-            files.push({
-                path: "mimetype",
-                data: this.createMimetype()
-            });
-
-            files.push({
-                path: "META-INF/container.xml",
-                data: this.createContainerXml()
-            });
-
-            files.push({
-                path: "OEBPS/Styles/style.css",
-                data: this.createStyle()
-            });
-
-            files.push({
-                path: "OEBPS/Text/introduction.xhtml",
-                data: this.createIntroduction(book)
-            });
-
-            files.push({
-                path: "OEBPS/Text/toc.xhtml",
-                data: this.createToc(book, chapterInfos)
-            });
-
-            files.push({
-                path: "OEBPS/nav.xhtml",
-                data: this.createNav(book, chapterInfos)
-            });
-
-            files.push({
-                path: "OEBPS/content.opf",
-                data: this.createContentOpf(
-                    book,
-                    chapterInfos
-                )
-            });
-
-            return files;
+            return [
+                {
+                    path: "mimetype",
+                    data: this.createMimetype()
+                },
+                {
+                    path: "META-INF/container.xml",
+                    data: this.createContainerXml()
+                },
+                {
+                    path: "OEBPS/Styles/style.css",
+                    data: this.createStyle()
+                },
+                {
+                    path: "OEBPS/Text/introduction.xhtml",
+                    data: this.createIntroduction(book)
+                }
+            ];
         }
 
 
-        /**
-         * EPUB mimetype.
-         */
         createMimetype() {
+
             return "application/epub+zip";
         }
 
 
-        /**
-         * META-INF/container.xml
-         */
         createContainerXml() {
 
             return `<?xml version="1.0" encoding="UTF-8"?>
@@ -106,12 +68,6 @@
         }
 
 
-        /**
-         * CSS cơ bản.
-         *
-         * Có thể thay nội dung bằng CSS hiện tại
-         * của EpubExporter cũ.
-         */
         createStyle() {
 
             return `
@@ -122,7 +78,9 @@ body {
     font-family: sans-serif;
 }
 
-h1, h2, h3 {
+h1,
+h2,
+h3 {
     text-align: center;
 }
 
@@ -143,29 +101,32 @@ img {
         }
 
 
-        /**
-         * introduction.xhtml
-         */
         createIntroduction(book) {
 
             const title = this.escapeXml(
-                book?.title || ""
+                this.getBookTitle(book)
             );
 
             const author = this.escapeXml(
-                book?.author || ""
+                this.getBookAuthor(book)
             );
 
             return `<?xml version="1.0" encoding="UTF-8"?>
+
 <!DOCTYPE html>
-<html xmlns="http://www.w3.org/1999/xhtml">
+
+<html
+    xmlns="http://www.w3.org/1999/xhtml">
 
 <head>
+
     <title>${title}</title>
+
     <link
         rel="stylesheet"
         type="text/css"
         href="../Styles/style.css"/>
+
 </head>
 
 <body>
@@ -184,23 +145,25 @@ img {
         }
 
 
-        /**
-         * toc.xhtml
-         */
+        // =========================================================
+        // TOC
+        // =========================================================
+
         createToc(book, chapterInfos = []) {
 
             const title = this.escapeXml(
-                book?.title || "Table of Contents"
+                this.getBookTitle(book) ||
+                "Table of Contents"
             );
 
             let items = "";
 
             for (let i = 0; i < chapterInfos.length; i++) {
 
-                const chapter = chapterInfos[i];
+                const chapter = chapterInfos[i] || {};
 
                 const chapterTitle = this.escapeXml(
-                    chapter?.title ||
+                    chapter.title ||
                     `Chapter ${i + 1}`
                 );
 
@@ -213,17 +176,21 @@ img {
             }
 
             return `<?xml version="1.0" encoding="UTF-8"?>
+
 <!DOCTYPE html>
 
-<html xmlns="http://www.w3.org/1999/xhtml">
+<html
+    xmlns="http://www.w3.org/1999/xhtml">
 
 <head>
+
     <title>${title}</title>
 
     <link
         rel="stylesheet"
         type="text/css"
         href="../Styles/style.css"/>
+
 </head>
 
 <body>
@@ -240,23 +207,25 @@ ${items}
         }
 
 
-        /**
-         * nav.xhtml
-         */
+        // =========================================================
+        // NAV
+        // =========================================================
+
         createNav(book, chapterInfos = []) {
 
             const title = this.escapeXml(
-                book?.title || "Navigation"
+                this.getBookTitle(book) ||
+                "Navigation"
             );
 
             let items = "";
 
             for (let i = 0; i < chapterInfos.length; i++) {
 
-                const chapter = chapterInfos[i];
+                const chapter = chapterInfos[i] || {};
 
                 const chapterTitle = this.escapeXml(
-                    chapter?.title ||
+                    chapter.title ||
                     `Chapter ${i + 1}`
                 );
 
@@ -275,12 +244,16 @@ ${items}
     xmlns:epub="http://www.idpf.org/2007/ops">
 
 <head>
+
     <title>${title}</title>
+
 </head>
 
 <body>
 
-<nav epub:type="toc" id="toc">
+<nav
+    epub:type="toc"
+    id="toc">
 
     <h1>${title}</h1>
 
@@ -296,23 +269,54 @@ ${items}
         }
 
 
+        // =========================================================
+        // CONTENT OPF
+        // =========================================================
+
         /**
-         * content.opf
+         * Tạo content.opf.
          *
-         * Chỉ cần chapterInfos.
-         * Không cần chapter content.
+         * chapterInfos chỉ cần:
+         *
+         * [
+         *     {
+         *         title: "...",
+         *         path: "OEBPS/Text/chapter_1.xhtml"
+         *     }
+         * ]
+         *
+         * images:
+         *
+         * [
+         *     {
+         *         name: "image_1.jpg",
+         *         path: "OEBPS/Images/image_1.jpg",
+         *         mediaType: "image/jpeg"
+         *     }
+         * ]
          */
-        createContentOpf(book, chapterInfos = []) {
+        createContentOpf(
+            book,
+            chapterInfos = [],
+            images = [],
+            cover = null
+        ) {
 
             const title = this.escapeXml(
-                book?.title || "Book"
+                this.getBookTitle(book) ||
+                "Book"
             );
 
             const author = this.escapeXml(
-                book?.author || ""
+                this.getBookAuthor(book)
             );
 
             const uuid = this.uuid();
+
+
+            // -----------------------------------------------------
+            // MANIFEST
+            // -----------------------------------------------------
 
             let manifest = `
 <item
@@ -337,24 +341,92 @@ ${items}
     properties="nav"/>`;
 
 
-            let spine = `
-<itemref idref="introduction"/>`;
+            // -----------------------------------------------------
+            // COVER
+            // -----------------------------------------------------
 
-
-            for (let i = 0; i < chapterInfos.length; i++) {
-
-                const id = `chapter_${i + 1}`;
+            if (cover) {
 
                 manifest += `
 <item
-    id="${id}"
-    href="Text/${id}.xhtml"
+    id="cover-image"
+    href="Images/${this.escapeXml(
+        cover.name || "cover.jpg"
+    )}"
+    media-type="${this.escapeXml(
+        cover.mediaType || "image/jpeg"
+    )}"
+    properties="cover-image"/>`;
+            }
+
+
+            // -----------------------------------------------------
+            // IMAGES
+            // -----------------------------------------------------
+
+            for (let i = 0; i < images.length; i++) {
+
+                const image = images[i];
+
+                if (!image) {
+                    continue;
+                }
+
+                const name =
+                    image.name ||
+                    `image_${i + 1}.jpg`;
+
+                const mediaType =
+                    image.mediaType ||
+                    "application/octet-stream";
+
+                manifest += `
+<item
+    id="image_${i + 1}"
+    href="Images/${this.escapeXml(name)}"
+    media-type="${this.escapeXml(mediaType)}"/>`;
+            }
+
+
+            // -----------------------------------------------------
+            // CHAPTERS
+            // -----------------------------------------------------
+
+            let spine = `
+<itemref idref="introduction"/>`;
+
+            for (let i = 0; i < chapterInfos.length; i++) {
+
+                const chapter = chapterInfos[i] || {};
+
+                const id =
+                    chapter.id ||
+                    `chapter_${i + 1}`;
+
+                const path =
+                    chapter.path ||
+                    `OEBPS/Text/${id}.xhtml`;
+
+                const href =
+                    path.indexOf("OEBPS/") === 0
+                        ? path.substring(6)
+                        : path;
+
+                manifest += `
+<item
+    id="${this.escapeXml(id)}"
+    href="${this.escapeXml(href)}"
     media-type="application/xhtml+xml"/>`;
 
                 spine += `
-<itemref idref="${id}"/>`;
+<itemref
+    idref="${this.escapeXml(id)}"/>`;
             }
 
+
+            // -----------------------------------------------------
+            // RESULT
+            // -----------------------------------------------------
 
             return `<?xml version="1.0" encoding="UTF-8"?>
 
@@ -402,22 +474,34 @@ ${items}
         // COVER
         // =========================================================
 
-        /**
-         * Tạo thông tin cover.
-         *
-         * Cover được xử lý riêng.
-         * Không giữ cover trong Builder.
-         */
-        createCover(coverData, extension = "jpg") {
+        createCover(
+            coverData,
+            extension = "jpg"
+        ) {
 
-            const ext = this.normalizeExtension(
-                extension
-            );
+            const ext =
+                this.normalizeExtension(
+                    extension
+                );
 
             return {
-                path: `OEBPS/Images/cover.${ext}`,
-                data: coverData,
-                mediaType: this.getImageMediaType(ext)
+
+                name:
+                    `cover.${ext}`,
+
+                path:
+                    `OEBPS/Images/cover.${ext}`,
+
+                data:
+                    coverData,
+
+                extension:
+                    ext,
+
+                mediaType:
+                    this.getImageMediaType(
+                        ext
+                    )
             };
         }
 
@@ -427,22 +511,13 @@ ${items}
         // =========================================================
 
         /**
-         * Tạo MỘT chapter.
-         *
-         * Không lưu chapter vào Builder.
-         *
-         * @param {Object} chapter
-         * @param {Number} chapterIndex
-         * @param {Function} getImage
-         * @param {Function} onImage
+         * Tạo một chapter.
          *
          * getImage(src)
-         *     -> trả về image data
+         *     -> trả image data
          *
          * onImage(image)
-         *     -> packager xử lý ngay
-         *
-         * @returns {Object}
+         *     -> Builder gửi image ra ngoài ngay lập tức
          */
         async createChapter(
             chapter,
@@ -457,10 +532,12 @@ ${items}
                 );
             }
 
+
             const html =
                 chapter.contentHtml ||
                 chapter.content ||
                 "";
+
 
             const title =
                 chapter.title ||
@@ -481,25 +558,29 @@ ${items}
 
 
             return {
-                path: path,
-                data: this.writeChapter(
+
+                id:
+                    `chapter_${chapterIndex + 1}`,
+
+                path:
+                    path,
+
+                title:
                     title,
-                    content
-                )
+
+                data:
+                    this.writeChapter(
+                        title,
+                        content
+                    )
             };
         }
 
 
-        /**
-         * Xử lý ảnh trong MỘT chapter.
-         *
-         * Không tạo:
-         *
-         * images: []
-         *
-         * thay vào đó gặp ảnh nào thì
-         * gọi onImage() ngay.
-         */
+        // =========================================================
+        // PROCESS IMAGE
+        // =========================================================
+
         async processChapterImages(
             content,
             chapterIndex,
@@ -517,6 +598,7 @@ ${items}
 
 
             let output = "";
+
             let lastIndex = 0;
 
             let match;
@@ -526,22 +608,22 @@ ${items}
                 (match = regex.exec(content)) !== null
             ) {
 
-                const before =
+                output +=
                     content.substring(
                         lastIndex,
                         match.index
                     );
 
 
-                output += before;
+                const fullTag =
+                    match[0];
+
+                const src =
+                    match[2];
 
 
-                const fullTag = match[0];
-
-                const src = match[2];
-
-
-                let newSrc = src;
+                let newSrc =
+                    src;
 
 
                 // -------------------------------------------------
@@ -549,34 +631,43 @@ ${items}
                 // -------------------------------------------------
 
                 if (
-                    src.startsWith(
-                        "data:image/"
-                    )
+                    src.toLowerCase()
+                        .indexOf("data:image/") === 0
                 ) {
 
                     const image =
                         this.createDataImage(
-                            src,
-                            chapterIndex
+                            src
                         );
 
 
                     if (image) {
 
-                        await onImage(image);
+                        if (
+                            typeof onImage ===
+                            "function"
+                        ) {
+
+                            await onImage(
+                                image
+                            );
+                        }
+
 
                         newSrc =
                             `../Images/${image.name}`;
                     }
                 }
 
+
                 // -------------------------------------------------
-                // EXTERNAL / DATABASE IMAGE
+                // EXTERNAL IMAGE
                 // -------------------------------------------------
 
                 else {
 
-                    let imageData = null;
+                    let imageData =
+                        null;
 
 
                     if (
@@ -585,7 +676,9 @@ ${items}
                     ) {
 
                         imageData =
-                            await getImage(src);
+                            await getImage(
+                                src
+                            );
                     }
 
 
@@ -603,13 +696,17 @@ ${items}
 
                         const image = {
 
-                            name: name,
+                            name:
+                                name,
 
                             path:
                                 `OEBPS/Images/${name}`,
 
                             data:
                                 imageData,
+
+                            extension:
+                                extension,
 
                             mediaType:
                                 this.getImageMediaType(
@@ -618,7 +715,15 @@ ${items}
                         };
 
 
-                        await onImage(image);
+                        if (
+                            typeof onImage ===
+                            "function"
+                        ) {
+
+                            await onImage(
+                                image
+                            );
+                        }
 
 
                         newSrc =
@@ -628,7 +733,7 @@ ${items}
 
 
                 // -------------------------------------------------
-                // THAY SRC
+                // REPLACE SRC
                 // -------------------------------------------------
 
                 const newTag =
@@ -638,7 +743,8 @@ ${items}
                     );
 
 
-                output += newTag;
+                output +=
+                    newTag;
 
 
                 lastIndex =
@@ -656,13 +762,11 @@ ${items}
         }
 
 
-        /**
-         * Tạo image object từ data:image/...
-         */
-        createDataImage(
-            dataUrl,
-            chapterIndex
-        ) {
+        // =========================================================
+        // DATA IMAGE
+        // =========================================================
+
+        createDataImage(dataUrl) {
 
             const match =
                 dataUrl.match(
@@ -681,14 +785,31 @@ ${items}
                 );
 
 
-            const base64 =
-                match[2];
+            let data;
 
 
-            const data =
-                this.base64ToUint8Array(
-                    base64
-                );
+            if (
+                dataUrl
+                    .toLowerCase()
+                    .indexOf(";base64,") >= 0
+            ) {
+
+                data =
+                    this.base64ToUint8Array(
+                        match[2]
+                    );
+            }
+            else {
+
+                const text =
+                    decodeURIComponent(
+                        match[2]
+                    );
+
+                data =
+                    new TextEncoder()
+                        .encode(text);
+            }
 
 
             const name =
@@ -697,12 +818,17 @@ ${items}
 
             return {
 
-                name: name,
+                name:
+                    name,
 
                 path:
                     `OEBPS/Images/${name}`,
 
-                data: data,
+                data:
+                    data,
+
+                extension:
+                    extension,
 
                 mediaType:
                     this.getImageMediaType(
@@ -712,9 +838,10 @@ ${items}
         }
 
 
-        /**
-         * Tạo XHTML cho chapter.
-         */
+        // =========================================================
+        // WRITE CHAPTER
+        // =========================================================
+
         writeChapter(
             title,
             content
@@ -761,7 +888,40 @@ ${items}
 
 
         // =========================================================
-        // IMAGE
+        // BOOK INFO
+        // =========================================================
+
+        getBookTitle(book) {
+
+            if (!book) {
+                return "";
+            }
+
+            return (
+                book.title ||
+                book.name ||
+                book.tname ||
+                book.hname ||
+                ""
+            );
+        }
+
+
+        getBookAuthor(book) {
+
+            if (!book) {
+                return "";
+            }
+
+            return (
+                book.author ||
+                ""
+            );
+        }
+
+
+        // =========================================================
+        // IMAGE UTILITY
         // =========================================================
 
         getImageExtension(src) {
@@ -771,9 +931,10 @@ ${items}
             }
 
 
-            let value = src
-                .split("?")[0]
-                .split("#")[0];
+            let value =
+                String(src)
+                    .split("?")[0]
+                    .split("#")[0];
 
 
             const match =
@@ -804,23 +965,17 @@ ${items}
                     );
 
 
-            if (
-                extension === "jpeg"
-            ) {
+            if (extension === "jpeg") {
                 return "jpg";
             }
 
 
-            if (
-                extension === "svg+xml"
-            ) {
+            if (extension === "svg+xml") {
                 return "svg";
             }
 
 
-            if (
-                !extension
-            ) {
+            if (!extension) {
                 return "jpg";
             }
 
@@ -872,6 +1027,7 @@ ${items}
             const binary =
                 atob(base64);
 
+
             const bytes =
                 new Uint8Array(
                     binary.length
@@ -897,7 +1053,8 @@ ${items}
 
             let binary = "";
 
-            const chunkSize = 0x8000;
+            const chunkSize =
+                0x8000;
 
 
             for (
@@ -906,15 +1063,17 @@ ${items}
                 i += chunkSize
             ) {
 
-                binary += String.fromCharCode(
-                    ...bytes.subarray(
-                        i,
-                        Math.min(
-                            i + chunkSize,
-                            bytes.length
+                binary +=
+                    String.fromCharCode.apply(
+                        null,
+                        bytes.subarray(
+                            i,
+                            Math.min(
+                                i + chunkSize,
+                                bytes.length
+                            )
                         )
-                    )
-                );
+                    );
             }
 
 
@@ -923,12 +1082,12 @@ ${items}
 
 
         // =========================================================
-        // UTILITY
+        // XML
         // =========================================================
 
         escapeXml(value) {
 
-            return String(value ?? "")
+            return String(value || "")
                 .replace(
                     /&/g,
                     "&amp;"
@@ -951,6 +1110,10 @@ ${items}
                 );
         }
 
+
+        // =========================================================
+        // UUID
+        // =========================================================
 
         uuid() {
 
@@ -985,9 +1148,12 @@ ${items}
 
 
     // =============================================================
-    // WEBVIEW EXPORT
+    // EXPORT
     // =============================================================
 
-    window.EpubBuilder = EpubBuilder;
+    window.EpubBuilder =
+        EpubBuilder;
 
 })();
+
+
