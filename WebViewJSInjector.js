@@ -123,104 +123,285 @@
           defaultValue: false,
 
           fn: (MOD, checked) => {
-            // =========================
-            // BẬT
-            // =========================
-            if (checked) {
-              // Đã hook rồi thì không hook lại
-              if (app.celoader.bookdownloadedrow.__modDownloadHook) {
-                console.log("Add Download đã được hook");
+            // =====================================================
+            // TẮT
+            // =====================================================
+            if (!checked) {
+              // Khôi phục hàm gốc
+              if (window.__MOD_OLD_BOOKDOWNLOADEDROW__) {
+                app.celoader.bookdownloadedrow =
+                  window.__MOD_OLD_BOOKDOWNLOADEDROW__;
+
+                delete window.__MOD_OLD_BOOKDOWNLOADEDROW__;
+
+                console.log("[MOD] Đã bỏ hook bookdownloadedrow");
+              }
+
+              // Xóa các nút đã thêm
+              document
+                .querySelectorAll(".mod-download-btn")
+                .forEach(function (btn) {
+                  btn.remove();
+                });
+
+              return;
+            }
+
+            // =====================================================
+            // HÀM THÊM NÚT DOWNLOAD
+            // =====================================================
+            function addDownloadButton(row, data) {
+              if (!row) return;
+
+              // Đã có nút thì không thêm nữa
+              if (row.querySelector(".mod-download-btn")) {
                 return;
               }
 
-              const oldBookDownloadedRow = app.celoader.bookdownloadedrow;
+              const btn = document.createElement("button");
 
-              const newBookDownloadedRow = function (ele, data) {
-                // Gọi hàm gốc
-                const row = oldBookDownloadedRow.apply(this, arguments);
+              btn.textContent = "Download";
+              btn.className = "mod-download-btn";
 
-                // =========================
-                // KIỂM TRA ĐÃ CÓ NÚT CHƯA
-                // =========================
-                if (row.querySelector(".mod-download-btn")) {
-                  return row;
-                }
+              btn.style.cssText = ` 
+        margin-left: 8px; 
+        padding: 5px 10px; 
+        border: 0; 
+        border-radius: 5px; 
+        background: #2196f3; 
+        color: white; 
+        font-size: 12px; 
+        cursor: pointer; 
+      `;
 
-                // =========================
-                // TẠO NÚT DOWNLOAD
-                // =========================
-                const btn = document.createElement("button");
+              btn.addEventListener("click", async function (e) {
+                e.preventDefault();
+                e.stopPropagation();
 
-                btn.textContent = "Download";
-                btn.className = "mod-download-btn";
+                console.log("===== DOWNLOAD =====");
+                console.log("Book:", data);
+                console.log("lid:", data && data.lid);
+                console.log("id:", data && data.id);
+                console.log("host:", data && data.host);
+                console.log("name:", data && data.name);
 
-                btn.style.cssText = `
-                    margin-left: 8px;
-                    padding: 5px 10px;
-                    border: 0;
-                    border-radius: 5px;
-                    background: #2196f3;
-                    color: white;
-                    font-size: 12px;
-                    cursor: pointer;
-                `;
+                // =====================================================
+                // LẤY THÔNG TIN BOOK
+                // =====================================================
 
-                // =========================
-                // CLICK DOWNLOAD
-                // =========================
-                btn.addEventListener("click", function (e) {
-                  e.preventDefault();
-                  e.stopPropagation();
+                try {
+                  const host = data.host;
+                  const bookId = data.id;
 
-                  console.log("===== DOWNLOAD =====");
-                  console.log("Book:", data);
-                  console.log("lid:", data.lid);
-                  console.log("id:", data.id);
-                  console.log("host:", data.host);
+                  console.log("===== BOOK INFO =====");
+                  console.log("host:", host);
+                  console.log("id:", bookId);
                   console.log("name:", data.name);
+                  console.log("author:", data.author);
 
-                  // CODE DOWNLOAD CỦA BẠN
-                });
+                  // ===================================================
+                  // LẤY CHAPTER LIST
+                  // ===================================================
 
-                // =========================
-                // THÊM NÚT
-                // =========================
-                const tags = row.querySelector(".tags");
+                  const chapterList = await getChapterListCache(host, bookId);
 
-                if (tags) {
-                  tags.appendChild(btn);
+                  console.log("===== CHAPTER LIST =====");
+                  console.log("Total:", chapterList.length);
+                  console.table(chapterList);
+
+                  // ===================================================
+                  // LẤY OFFLINE BOOK
+                  // ===================================================
+
+                  const book = app.offlineBook.getSingleton(host, bookId);
+
+                  console.log("OfflineBook:", book);
+
+                  // ===================================================
+                  // LẤY DANH SÁCH CHAPTER ĐÃ DOWNLOAD
+                  // ===================================================
+
+                  const downloadedIds = await book.getChapterDownloaded();
+
+                  console.log("===== DOWNLOADED CHAPTERS =====");
+                  console.log("Total:", downloadedIds.length);
+                  console.log(downloadedIds);
+
+                  // ===================================================
+                  // TẠO SET ĐỂ KIỂM TRA CHAPTER ĐÃ DOWNLOAD
+                  // ===================================================
+
+                  const downloadedSet = new Set(
+                    downloadedIds.map(function (id) {
+                      return String(id);
+                    }),
+                  );
+
+                  // ===================================================
+                  // LẤY CONTENT
+                  // ===================================================
+
+                  const chapters = [];
+
+                  for (let i = 0; i < chapterList.length; i++) {
+                    const chapter = chapterList[i];
+
+                    if (!chapter) {
+                      continue;
+                    }
+
+                    const cid = String(chapter.cid);
+
+                    // Chưa download thì bỏ qua
+                    if (!downloadedSet.has(cid)) {
+                      continue;
+                    }
+
+                    const title = chapter.title
+                      ? String(chapter.title).trim()
+                      : "";
+
+                    const content = await book.getChapter(cid);
+
+                    chapters.push({
+                      cid: cid,
+                      title: title,
+                      content: content || "",
+                    });
+
+                    console.log(
+                      "CHAPTER:",
+                      cid,
+                      title,
+                      "size:",
+                      content ? content.length : 0,
+                    );
+                  }
+
+                  // ===================================================
+                  // KẾT QUẢ
+                  // ===================================================
+
+                  console.log("===== DOWNLOAD DATA =====");
+
+                  console.log("Tổng chapter:", chapterList.length);
+
+                  console.log("Đã download:", downloadedIds.length);
+
+                  console.log("Đọc được:", chapters.length);
+
+                  console.table(
+                    chapters.map(function (chapter) {
+                      return {
+                        cid: chapter.cid,
+                        title: chapter.title,
+                        size: chapter.content.length,
+                      };
+                    }),
+                  );
+
+                  // ===================================================
+                  // IN CONTENT
+                  // ===================================================
+
+                  for (let i = 0; i < chapters.length; i++) {
+                    console.log("===== CHAPTER " + (i + 1) + " =====");
+
+                    console.log("CID:", chapters[i].cid);
+
+                    console.log("TITLE:", chapters[i].title);
+
+                    console.log("CONTENT:", chapters[i].content);
+                  }
+
+                  // ===================================================
+                  // DATA CHO CREATE EPUB
+                  // ===================================================
+
+                  const epubData = {
+                    book: data,
+                    host: host,
+                    id: bookId,
+                    lid: data.lid,
+                    name: data.name,
+                    author: data.author,
+                    chapters: chapters,
+                  };
+
+                  console.log("===== EPUB DATA =====");
+                  console.log(epubData);
+
+                  // ===================================================
+                  // GỌI CREATE EPUB
+                  // ===================================================
+
+                  if (typeof createEpub === "function") {
+                    console.log("[MOD] Gọi createEpub()");
+
+                    await createEpub(epubData);
+                  } else {
+                    console.log("[MOD] Chưa có createEpub");
+                  }
+                } catch (error) {
+                  console.error("[MOD] DOWNLOAD ERROR:", error);
                 }
+              });
+
+              const tags = row.querySelector(".tags");
+
+              if (tags) {
+                tags.appendChild(btn);
+              }
+            }
+
+            // =====================================================
+            // HOOK bookdownloadedrow
+            // =====================================================
+
+            // Chưa hook thì mới hook
+            if (!window.__MOD_OLD_BOOKDOWNLOADEDROW__) {
+              window.__MOD_OLD_BOOKDOWNLOADEDROW__ =
+                app.celoader.bookdownloadedrow;
+
+              app.celoader.bookdownloadedrow = function (ele, data) {
+                // Hàm gốc tạo row
+                const row = window.__MOD_OLD_BOOKDOWNLOADEDROW__.apply(
+                  this,
+                  arguments,
+                );
+
+                // Thêm nút cho row mới
+                addDownloadButton(row, data);
 
                 return row;
               };
 
-              // Đánh dấu hook
-              newBookDownloadedRow.__modDownloadHook = true;
-              newBookDownloadedRow.__modOriginal = oldBookDownloadedRow;
-
-              app.celoader.bookdownloadedrow = newBookDownloadedRow;
-
-              console.log("Đã bật Add Download");
+              console.log("[MOD] Đã hook bookdownloadedrow");
             }
 
-            // =========================
-            // TẮT
-            // =========================
-            else {
-              const current = app.celoader.bookdownloadedrow;
+            // =====================================================
+            // XỬ LÝ NHỮNG ROW ĐÃ ĐƯỢC TẠO TRƯỚC KHI BẬT MOD
+            // =====================================================
 
-              if (current.__modDownloadHook) {
-                app.celoader.bookdownloadedrow = current.__modOriginal;
+            document
+              .querySelectorAll(".bookrowcont[view='bookdownloadedrow']")
+              .forEach(function (container) {
+                const row = container.querySelector(".bookrow");
 
-                document
-                  .querySelectorAll(".mod-download-btn")
-                  .forEach(function (btn) {
-                    btn.remove();
-                  });
+                if (!row) return;
 
-                console.log("Đã tắt Add Download");
-              }
-            }
+                // app.render() gán data vào element
+                const data = container.data || row.data;
+
+                if (!data) {
+                  console.log("[MOD] Không tìm thấy data:", container);
+                  return;
+                }
+
+                addDownloadButton(row, data);
+              });
+
+            console.log("[MOD] Add Download ON");
           },
         },
       ],
@@ -247,6 +428,65 @@
       title: "JavaScript",
       icon: "fa-code",
       buttons: [
+        {
+          id: "mod-destroy",
+          icon: "fa-file-code",
+          label: "Hủy Mod",
+
+          fn: (MOD) => {
+            try {
+              console.log("[MOD] Đang hủy MOD...");
+
+              // =================================================
+              // 1. KHÔI PHỤC bookdownloadedrow (nếu đã hook)
+              // =================================================
+              if (window.__MOD_OLD_BOOKDOWNLOADEDROW__) {
+                app.celoader.bookdownloadedrow =
+                  window.__MOD_OLD_BOOKDOWNLOADEDROW__;
+
+                delete window.__MOD_OLD_BOOKDOWNLOADEDROW__;
+
+                console.log("[MOD] Đã khôi phục bookdownloadedrow");
+              }
+
+              // =================================================
+              // 2. XÓA CÁC NÚT DO MOD TẠO (Download...)
+              // =================================================
+              document
+                .querySelectorAll(".mod-download-btn")
+                .forEach(function (btn) {
+                  btn.remove();
+                });
+
+              console.log("[MOD] Đã xóa Download button");
+
+              // =================================================
+              // 3. XÓA TAB / NAVBAR / STYLE CỦA MOD
+              //    (dùng MOD.remove() thay vì tự tìm id cho chắc đúng)
+              // =================================================
+              MOD.remove();
+
+              // =================================================
+              // 4. KHÔI PHỤC console.log GỐC
+              // =================================================
+              if (typeof originalConsoleLog === "function") {
+                console.log = originalConsoleLog;
+              }
+
+              originalConsoleLog("[MOD] Hủy MOD hoàn tất");
+
+              // =================================================
+              // 5. XÓA window.MOD SAU CÙNG
+              // =================================================
+              setTimeout(function () {
+                delete window.MOD;
+                originalConsoleLog("[MOD] window.MOD đã được xóa");
+              }, 100);
+            } catch (error) {
+              console.error("[MOD] Lỗi khi hủy MOD:", error);
+            }
+          },
+        },
         {
           id: "mod-script-list",
           icon: "fa-file-code",
