@@ -225,10 +225,7 @@
                   // LẤY OFFLINE BOOK
                   // ===================================================
 
-                 const book = app.offlineBook.getSingleton({
-    host: host,
-    id: bookId
-});
+                 const book = app.offlineBook.getSingleton(host, bookId, data);
                   console.log("OfflineBook:", book);
 
                   // ===================================================
