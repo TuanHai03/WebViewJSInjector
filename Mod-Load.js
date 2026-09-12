@@ -8,7 +8,7 @@ if (window.__WEBVIEW_JS_INJECTOR_LOADED__) { console.log("[MOD] Injector đã ch
   const BASE_URL =
     `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/`;
 
-  const FILES = ["mod-core.js", "mod-buttons.js"];
+  const FILES = ["mod-core.js","EpubBuilder.js", "mod-buttons.js"];
 
   const DB_NAME = "JS";
   const STORE_NAME = "s";
