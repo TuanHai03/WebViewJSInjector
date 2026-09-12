@@ -308,7 +308,7 @@ createToc(book, chapterInfos = [])
         `</html>`;
 
     return xml;
-    };
+    
 }
 
 
@@ -398,7 +398,7 @@ createToc(book, chapterInfos = [])
         `</package>`;
 
     return  opf;
-    };
+    
 }
 
 
