@@ -8,8 +8,8 @@
   // SỬA 3 DÒNG DƯỚI ĐÂY cho đúng repo của bạn:
   // =========================================================
 
-  const GITHUB_USER = "user"; // <-- đổi thành username của bạn
-  const GITHUB_REPO = "repo"; // <-- đổi thành tên repo
+  const GITHUB_USER = "TuanHai03"; // <-- đổi thành username của bạn
+  const GITHUB_REPO = "WebViewJSInjector"; // <-- đổi thành tên repo
   const GITHUB_BRANCH = "main"; // <-- hoặc tên branch/tag bạn dùng
 
   // raw.githubusercontent.com gần như không cache -> hợp khi đang code/test.
