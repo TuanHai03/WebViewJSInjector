@@ -83,21 +83,13 @@
               const nm = app?.net?.networkManagerXHR;
 
               if (!nm) {
-                console.error("[MOD] Không tìm thấy app.net.networkManagerXHR");
-
                 MOD.status("Không tìm thấy networkManagerXHR");
 
                 return;
               }
 
               if (!Array.isArray(nm.defaultDomains)) {
-                console.error(
-                  "[MOD] defaultDomains không phải Array:",
-                  nm.defaultDomains,
-                );
-
                 MOD.status("defaultDomains không phải Array");
-
                 return;
               }
 
@@ -115,21 +107,119 @@
                 );
 
                 const after = nm.defaultDomains.length;
-
-                console.log("[MOD] Fix Login ON");
-
-                console.log("[MOD] defaultDomains:", nm.defaultDomains);
-
-                console.log(`[MOD] Đã xóa ${before - after} domain`);
-
                 MOD.status(`Fix Login ON - đã xóa ${before - after} domain`);
 
                 return;
               }
             } catch (error) {
-              console.error("[MOD] Fix-Login lỗi:", error);
-
               MOD.status("Fix-Login lỗi: " + error.message);
+            }
+          },
+        },
+        {
+          id: "mod-add-dowload",
+          type: "toggle",
+          label: "Add dowload",
+          defaultValue: false,
+
+          fn: (MOD, checked) => {
+            // =========================
+            // BẬT
+            // =========================
+            if (checked) {
+              // Đã hook rồi thì không hook lại
+              if (app.celoader.bookdownloadedrow.__modDownloadHook) {
+                console.log("Add Download đã được hook");
+                return;
+              }
+
+              const oldBookDownloadedRow = app.celoader.bookdownloadedrow;
+
+              const newBookDownloadedRow = function (ele, data) {
+                // Gọi hàm gốc
+                const row = oldBookDownloadedRow.apply(this, arguments);
+
+                // =========================
+                // KIỂM TRA ĐÃ CÓ NÚT CHƯA
+                // =========================
+                if (row.querySelector(".mod-download-btn")) {
+                  return row;
+                }
+
+                // =========================
+                // TẠO NÚT DOWNLOAD
+                // =========================
+                const btn = document.createElement("button");
+
+                btn.textContent = "Download";
+                btn.className = "mod-download-btn";
+
+                btn.style.cssText = `
+                    margin-left: 8px;
+                    padding: 5px 10px;
+                    border: 0;
+                    border-radius: 5px;
+                    background: #2196f3;
+                    color: white;
+                    font-size: 12px;
+                    cursor: pointer;
+                `;
+
+                // =========================
+                // CLICK DOWNLOAD
+                // =========================
+                btn.addEventListener("click", function (e) {
+                  e.preventDefault();
+                  e.stopPropagation();
+
+                  console.log("===== DOWNLOAD =====");
+                  console.log("Book:", data);
+                  console.log("lid:", data.lid);
+                  console.log("id:", data.id);
+                  console.log("host:", data.host);
+                  console.log("name:", data.name);
+
+                  // CODE DOWNLOAD CỦA BẠN
+                });
+
+                // =========================
+                // THÊM NÚT
+                // =========================
+                const tags = row.querySelector(".tags");
+
+                if (tags) {
+                  tags.appendChild(btn);
+                }
+
+                return row;
+              };
+
+              // Đánh dấu hook
+              newBookDownloadedRow.__modDownloadHook = true;
+              newBookDownloadedRow.__modOriginal = oldBookDownloadedRow;
+
+              app.celoader.bookdownloadedrow = newBookDownloadedRow;
+
+              console.log("Đã bật Add Download");
+            }
+
+            // =========================
+            // TẮT
+            // =========================
+            else {
+              const current = app.celoader.bookdownloadedrow;
+
+              if (current.__modDownloadHook) {
+                app.celoader.bookdownloadedrow = current.__modOriginal;
+
+                document
+                  .querySelectorAll(".mod-download-btn")
+                  .forEach(function (btn) {
+                    btn.remove();
+                  });
+
+                console.log("Đã tắt Add Download");
+              }
             }
           },
         },
@@ -140,28 +230,12 @@
       icon: "fa-terminal",
       buttons: [
         {
-          id: "mod-console-test",
-          icon: "fa-terminal",
-          label: "Test Console",
-          fn: (MOD) => {
-            console.log("========================");
-            console.log("[MOD] Console OK");
-            console.log("URL:", location.href);
-            console.log("mainview:", document.getElementById("mainview"));
-            console.log("========================");
-
-            MOD.status("Console hoạt động");
-          },
-        },
-        {
           id: "mod-console-clear",
           icon: "fa-trash",
           label: "Clear Console",
           fn: (MOD) => {
             console.clear();
-
             const el = document.getElementById("mod-status");
-
             if (el) {
               el.innerHTML = "";
             }
@@ -173,24 +247,6 @@
       title: "JavaScript",
       icon: "fa-code",
       buttons: [
-        {
-          id: "mod-page-info",
-          icon: "fa-info-circle",
-          label: "Thông tin Web",
-          fn: (MOD) => {
-            console.log({
-              url: location.href,
-              title: document.title,
-              readyState: document.readyState,
-              app: window.app,
-              ui: window.ui,
-              mainview: document.getElementById("mainview"),
-              maintabdiv: document.getElementById("maintabdiv"),
-            });
-
-            MOD.status("Đã xuất thông tin Web");
-          },
-        },
         {
           id: "mod-script-list",
           icon: "fa-file-code",
@@ -217,8 +273,6 @@
           icon: "fa-link",
           label: "URL hiện tại",
           fn: (MOD) => {
-            console.log(location.href);
-
             MOD.status(location.href);
           },
         },
@@ -756,19 +810,19 @@
             const saved = MOD.getSetting(btn.id, btn.defaultValue === true);
 
             return `
-        <button
-            class="mod-button mod-toggle"
-            id="${btn.id}"
-        >
-            <i class="fas ${
-              saved ? "fa-toggle-on" : "fa-toggle-off"
-            } mod-toggle-icon"></i>
+                <button
+                    class="mod-button mod-toggle"
+                    id="${btn.id}"
+                >
+                    <i class="fas ${
+                      saved ? "fa-toggle-on" : "fa-toggle-off"
+                    } mod-toggle-icon"></i>
 
-            <span class="mod-button-label">
-                ${btn.label}
-            </span>
-        </button>
-    `;
+                    <span class="mod-button-label">
+                        ${btn.label}
+                    </span>
+                </button>
+            `;
           }
 
           // =====================================================
@@ -869,7 +923,7 @@
             ${controlsHtml}
 
         </div>
-    `;
+        `;
     },
 
     // =====================================================
@@ -1019,8 +1073,6 @@
               if (typeof btn.fn === "function") {
                 btn.fn(MOD, checked);
               }
-
-              console.log(`[MOD] ${btn.id} = ${checked}`);
             });
 
             // ==========================================
