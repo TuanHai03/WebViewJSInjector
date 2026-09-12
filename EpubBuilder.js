@@ -42,6 +42,21 @@
                     path: "OEBPS/Text/introduction.xhtml",
                     data: this.createIntroduction(book)
                 }
+                ,
+                {
+                    path: "OEBPS/Text/toc.xhtml",
+                    data: this.createToc(book,chapterInfos)
+                }
+                ,
+                {
+                    path: "OEBPS/nav.xhtml",
+                    data: this.createNav(book,chapterInfos)
+                }
+                ,
+                {
+                    path: "OEBPS/content.opf",
+                    data: this.createContentOpf(book,chapterInfos)
+                }
             ];
         }
 
@@ -55,218 +70,246 @@
         createContainerXml() {
 
             return `<?xml version="1.0" encoding="UTF-8"?>
-<container version="1.0"
-    xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
+                    <container version="1.0"
+                        xmlns="urn:oasis:names:tc:opendocument:xmlns:container">
 
-    <rootfiles>
-        <rootfile
-            full-path="OEBPS/content.opf"
-            media-type="application/oebps-package+xml"/>
-    </rootfiles>
+                        <rootfiles>
+                            <rootfile
+                                full-path="OEBPS/content.opf"
+                                media-type="application/oebps-package+xml"/>
+                        </rootfiles>
 
-</container>`;
+                    </container>`;
         }
 
 
-        createStyle() {
+        createStyle()      
+{
 
-            return `
-body {
-    margin: 0;
-    padding: 0;
-    line-height: 1.6;
-    font-family: sans-serif;
+        return `
+        body { font-family: sans-serif; line-height: 1.6; padding: 1em; }
+
+        h1 { text-align: center; }
+
+        p { margin: 0.5em 0; text-align: justify; }
+        `.trim();
 }
 
-h1,
-h2,
-h3 {
-    text-align: center;
+
+
+createIntroduction(book) 
+{
+
+    // =========================================================
+    // BOOK INFO
+    // =========================================================
+
+    const title =
+        this.escapeXml(
+            book && book.tname
+                ? book.tname
+                : ""
+        );
+
+    const author =
+        this.escapeXml(
+            book && book.hauthor
+                ? book.hauthor
+                : ""
+        );
+
+    const category =
+        this.escapeXml(
+            book && book.category
+                ? book.category.trim()
+                : ""
+        );
+
+
+    // =========================================================
+    // DESCRIPTION
+    // =========================================================
+
+    const info =
+        book && book.info
+            ? String(book.info)
+            : "";
+
+
+    const infoHtml =
+        this.escapeXml(info)
+            .replace(/\r\n/g, "\n")
+            .replace(/\r/g, "\n")
+            .split("\n")
+            .filter(function (line) {
+                return line.trim() !== "";
+            })
+            .map(function (line) {
+                return `    <p>${line}</p>`;
+            })
+            .join("\n");
+
+
+    // =========================================================
+    // XHTML
+    // =========================================================
+
+    return `<?xml version="1.0" encoding="UTF-8"?>
+
+    <!DOCTYPE html>
+
+    <html
+        xmlns="http://www.w3.org/1999/xhtml"
+        lang="vi">
+
+    <head>
+
+        <meta charset="UTF-8"/>
+
+        <title>Giới thiệu</title>
+
+        <link
+            href="../Styles/style.css"
+            rel="stylesheet"
+            type="text/css"/>
+
+    </head>
+
+    <body>
+
+        <h1>${title}</h1>
+
+        <p>
+            <strong>Tác giả:</strong>
+            ${author}
+        </p>
+
+        <p>
+            <strong>Thể loại:</strong>
+            ${category}
+        </p>
+
+        ${infoHtml}
+
+    </body>
+
+    </html>`;
 }
 
-img {
-    max-width: 100%;
-    height: auto;
-}
 
-.chapter {
-    margin: 0;
-    padding: 0;
-}
-
-.center {
-    text-align: center;
-}
-`.trim();
-        }
-
-
-        createIntroduction(book) {
-
-            const title = this.escapeXml(
-                this.getBookTitle(book)
-            );
-
-            const author = this.escapeXml(
-                this.getBookAuthor(book)
-            );
-
-            return `<?xml version="1.0" encoding="UTF-8"?>
-
-<!DOCTYPE html>
-
-<html
-    xmlns="http://www.w3.org/1999/xhtml">
-
-<head>
-
-    <title>${title}</title>
-
-    <link
-        rel="stylesheet"
-        type="text/css"
-        href="../Styles/style.css"/>
-
-</head>
-
-<body>
-
-    <h1>${title}</h1>
-
-    ${
-        author
-            ? `<p class="center">${author}</p>`
-            : ""
-    }
-
-</body>
-
-</html>`;
-        }
 
 
         // =========================================================
         // TOC
         // =========================================================
 
-        createToc(book, chapterInfos = []) {
+createToc(book, chapterInfos = []) 
+{
 
-            const title = this.escapeXml(
-                this.getBookTitle(book) ||
-                "Table of Contents"
-            );
+    const title =
+        this.escapeXml(
+            book && book.tname
+                ? book.tname
+                : ""
+        );
 
-            let items = "";
 
-            for (let i = 0; i < chapterInfos.length; i++) {
+    const links =
+        chapterInfos
+            .map(function (chapter, index) {
 
-                const chapter = chapterInfos[i] || {};
+                const chapterTitle =
+                    chapter && chapter.title
+                        ? chapter.title
+                        : `Chapter ${index + 1}`;
 
-                const chapterTitle = this.escapeXml(
-                    chapter.title ||
-                    `Chapter ${i + 1}`
-                );
+                return `<a href="../Text/chapter_${index + 1}.xhtml">${this.escapeXml(chapterTitle)}</a>
+    <br/>`;
 
-                items += `
-<li>
-    <a href="chapter_${i + 1}.xhtml">
-        ${chapterTitle}
-    </a>
-</li>`;
-            }
+                }, this)
+                .join("\n");
 
-            return `<?xml version="1.0" encoding="UTF-8"?>
 
-<!DOCTYPE html>
+        return `<?xml version="1.0" encoding="utf-8"?>
 
-<html
-    xmlns="http://www.w3.org/1999/xhtml">
+    <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+    "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
 
-<head>
+    <html xmlns="http://www.w3.org/1999/xhtml">
 
-    <title>${title}</title>
+    <head>
 
-    <link
-        rel="stylesheet"
-        type="text/css"
-        href="../Styles/style.css"/>
+        <title>${title}</title>
 
-</head>
+        <link
+            href="../Styles/style.css"
+            rel="stylesheet"
+            type="text/css"/>
 
-<body>
+        <meta
+            http-equiv="Content-Type"
+            content="text/html; charset=utf-8"/>
 
-<h1>${title}</h1>
+    </head>
 
-<ol>
-${items}
-</ol>
+    <body>
 
-</body>
+    <h1>Mục lục</h1>
 
-</html>`;
-        }
+    <br/>
+
+    ${links}
+
+    </body>
+
+    </html>`;
+}
+
 
 
         // =========================================================
         // NAV
         // =========================================================
 
-        createNav(book, chapterInfos = []) {
+        createNav(book, chapterInfos = []) 
+{
+    const title = this.escapeXml(
+        book && book.tname ? book.tname : ""
+    );
 
-            const title = this.escapeXml(
-                this.getBookTitle(book) ||
-                "Navigation"
-            );
+    const chapterItems = chapterInfos
+        .map(function (chapter, index) {
+            const chapterTitle =
+                chapter && chapter.title
+                    ? chapter.title
+                    : `Chapter ${index + 1}`;
 
-            let items = "";
+            return `            <li><a href="Text/chapter_${index + 1}.xhtml">${this.escapeXml(chapterTitle)}</a></li>`;
+        }, this)
+        .join("\n");
 
-            for (let i = 0; i < chapterInfos.length; i++) {
+    const xml =
+        `<?xml version="1.0" encoding="UTF-8"?>\n` +
+        `<!DOCTYPE html>\n` +
+        `<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">\n` +
+        `<head>\n` +
+        `    <title>${title}</title>\n` +
+        `</head>\n` +
+        `<body>\n` +
+        `    <nav epub:type="toc" id="toc">\n` +
+        `        <h1>Mục lục</h1>\n` +
+        `        <ol>\n` +
+        `            <li><a href="Text/introduction.xhtml">Giới thiệu</a></li>\n` +
+        `            <li><a href="Text/toc.xhtml">Mục lục</a></li>\n` +
+        `${chapterItems}\n` +
+        `        </ol>\n` +
+        `    </nav>\n` +
+        `</body>\n` +
+        `</html>`;
 
-                const chapter = chapterInfos[i] || {};
-
-                const chapterTitle = this.escapeXml(
-                    chapter.title ||
-                    `Chapter ${i + 1}`
-                );
-
-                items += `
-<li>
-    <a href="Text/chapter_${i + 1}.xhtml">
-        ${chapterTitle}
-    </a>
-</li>`;
-            }
-
-            return `<?xml version="1.0" encoding="UTF-8"?>
-
-<html
-    xmlns="http://www.w3.org/1999/xhtml"
-    xmlns:epub="http://www.idpf.org/2007/ops">
-
-<head>
-
-    <title>${title}</title>
-
-</head>
-
-<body>
-
-<nav
-    epub:type="toc"
-    id="toc">
-
-    <h1>${title}</h1>
-
-    <ol>
-        ${items}
-    </ol>
-
-</nav>
-
-</body>
-
-</html>`;
-        }
+    return xml;
+    };
+}
 
 
         // =========================================================
@@ -295,179 +338,68 @@ ${items}
          *     }
          * ]
          */
-        createContentOpf(
-            book,
-            chapterInfos = [],
-            images = [],
-            cover = null
-        ) {
+        createContentOpf(book, chapterInfos = []) 
+{
+    const uuid = this.uuid();
 
-            const title = this.escapeXml(
-                this.getBookTitle(book) ||
-                "Book"
-            );
+    // Liệt kê các chapter trong manifest
+    const manifestItems = chapterInfos
+        .map(function (_, index) {
+            return `        <item id="chap${index + 1}" href="Text/chapter_${index + 1}.xhtml" media-type="application/xhtml+xml"/>`;
+        })
+        .join("\n");
 
-            const author = this.escapeXml(
-                this.getBookAuthor(book)
-            );
+    // Thứ tự đọc các chapter
+    const spineItems = chapterInfos
+        .map(function (_, index) {
+            return `        <itemref idref="chap${index + 1}"/>`;
+        })
+        .join("\n");
 
-            const uuid = this.uuid();
+    const title = this.escapeXml(
+        book && book.tname ? book.tname : ""
+    );
 
+    const author = this.escapeXml(
+        book && book.hauthor ? book.hauthor : ""
+    );
 
-            // -----------------------------------------------------
-            // MANIFEST
-            // -----------------------------------------------------
+    const description =
+        book && book.info != null
+            ? `        <dc:description>${this.escapeXml(book.info)}</dc:description>\n`
+            : "";
 
-            let manifest = `
-<item
-    id="css"
-    href="Styles/style.css"
-    media-type="text/css"/>
+    const opf =
+        `<?xml version="1.0" encoding="UTF-8"?>\n` +
+        `<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId">\n` +
+        `    <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">\n` +
+        `        <dc:identifier id="BookId">urn:uuid:${uuid}</dc:identifier>\n` +
+        `        <dc:title>${title}</dc:title>\n` +
+        `        <dc:creator>${author}</dc:creator>\n` +
+        `        <meta name="cover" content="cover"/>\n` +
+        `        <dc:language>vi</dc:language>\n` +
+        description +
+        `    </metadata>\n` +
+        `    <manifest>\n` +
+        `        <item id="nav" href="nav.xhtml" properties="nav" media-type="application/xhtml+xml"/>\n` +
+        `        <item id="style" href="Styles/style.css" media-type="text/css"/>\n` +
+        `        <item id="intro" href="Text/introduction.xhtml" media-type="application/xhtml+xml"/>\n` +
+        `        <item id="cover" href="Images/cover.jpg" media-type="image/jpeg" properties="cover-image"/>\n` +
+        `        <item id="tocpage" href="Text/toc.xhtml" media-type="application/xhtml+xml"/>\n` +
+        manifestItems +
+        `\n` +
+        `    </manifest>\n` +
+        `    <spine>\n` +
+        `        <itemref idref="intro"/>\n` +
+        `        <itemref idref="tocpage"/>\n` +
+        spineItems +
+        `\n` +
+        `    </spine>\n` +
+        `</package>`;
 
-<item
-    id="introduction"
-    href="Text/introduction.xhtml"
-    media-type="application/xhtml+xml"/>
-
-<item
-    id="toc"
-    href="Text/toc.xhtml"
-    media-type="application/xhtml+xml"/>
-
-<item
-    id="nav"
-    href="nav.xhtml"
-    media-type="application/xhtml+xml"
-    properties="nav"/>`;
-
-
-            // -----------------------------------------------------
-            // COVER
-            // -----------------------------------------------------
-
-            if (cover) {
-
-                manifest += `
-<item
-    id="cover-image"
-    href="Images/${this.escapeXml(
-        cover.name || "cover.jpg"
-    )}"
-    media-type="${this.escapeXml(
-        cover.mediaType || "image/jpeg"
-    )}"
-    properties="cover-image"/>`;
-            }
-
-
-            // -----------------------------------------------------
-            // IMAGES
-            // -----------------------------------------------------
-
-            for (let i = 0; i < images.length; i++) {
-
-                const image = images[i];
-
-                if (!image) {
-                    continue;
-                }
-
-                const name =
-                    image.name ||
-                    `image_${i + 1}.jpg`;
-
-                const mediaType =
-                    image.mediaType ||
-                    "application/octet-stream";
-
-                manifest += `
-<item
-    id="image_${i + 1}"
-    href="Images/${this.escapeXml(name)}"
-    media-type="${this.escapeXml(mediaType)}"/>`;
-            }
-
-
-            // -----------------------------------------------------
-            // CHAPTERS
-            // -----------------------------------------------------
-
-            let spine = `
-<itemref idref="introduction"/>`;
-
-            for (let i = 0; i < chapterInfos.length; i++) {
-
-                const chapter = chapterInfos[i] || {};
-
-                const id =
-                    chapter.id ||
-                    `chapter_${i + 1}`;
-
-                const path =
-                    chapter.path ||
-                    `OEBPS/Text/${id}.xhtml`;
-
-                const href =
-                    path.indexOf("OEBPS/") === 0
-                        ? path.substring(6)
-                        : path;
-
-                manifest += `
-<item
-    id="${this.escapeXml(id)}"
-    href="${this.escapeXml(href)}"
-    media-type="application/xhtml+xml"/>`;
-
-                spine += `
-<itemref
-    idref="${this.escapeXml(id)}"/>`;
-            }
-
-
-            // -----------------------------------------------------
-            // RESULT
-            // -----------------------------------------------------
-
-            return `<?xml version="1.0" encoding="UTF-8"?>
-
-<package
-    xmlns="http://www.idpf.org/2007/opf"
-    version="3.0"
-    unique-identifier="book-id">
-
-    <metadata
-        xmlns:dc="http://purl.org/dc/elements/1.1/">
-
-        <dc:identifier id="book-id">
-            urn:uuid:${uuid}
-        </dc:identifier>
-
-        <dc:title>${title}</dc:title>
-
-        ${
-            author
-                ? `<dc:creator>${author}</dc:creator>`
-                : ""
-        }
-
-        <dc:language>vi</dc:language>
-
-    </metadata>
-
-    <manifest>
-
-        ${manifest}
-
-    </manifest>
-
-    <spine>
-
-        ${spine}
-
-    </spine>
-
-</package>`;
-        }
+    return  opf;
+    };
+}
 
 
         // =========================================================
