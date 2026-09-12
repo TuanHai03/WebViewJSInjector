@@ -160,7 +160,11 @@
           fn: (MOD) => {
             console.clear();
 
-            MOD.status("Đã Clear Console");
+            const el = document.getElementById("mod-status");
+
+            if (el) {
+              el.innerHTML = "";
+            }
           },
         },
       ],
@@ -556,174 +560,183 @@
                 color: inherit !important;
                 margin-right: 6px;
             }
-#${this.tabId} .mod-toggle {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
-
-#${this.tabId} .mod-toggle-icon {
-    width: 20px;
-    height: 20px;
-    min-width: 20px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    margin: 0 !important;
-    font-size: 18px;
-    flex-shrink: 0;
-}
-
-#${this.tabId} .mod-toggle-label {
-    display: inline-block;
-    line-height: 20px;
-}
-            #${this.tabId} .mod-button:active {
-                transform: none;
-            }
-
-            /* CHECKBOX */
-
-            #${this.tabId} .mod-checkbox {
+            #${this.tabId} .mod-toggle {
                 display: flex;
                 align-items: center;
-                width: 100%;
-                box-sizing: border-box;
-                padding: 12px;
-                margin-top: 7px;
-                border-radius: 6px;
-                background: var(--mod-button-bg, #eee);
-                color: var(--mod-button-text, #222);
-                cursor: pointer;
-                user-select: none;
+                gap: 8px;
             }
 
-            #${this.tabId} .mod-checkbox input {
-                display: none;
-            }
-
-            #${this.tabId} .mod-checkmark {
+            #${this.tabId} .mod-toggle-icon {
                 width: 20px;
                 height: 20px;
                 min-width: 20px;
-                border: 2px solid #888;
-                border-radius: 4px;
-                margin-right: 10px;
-                box-sizing: border-box;
-                position: relative;
+                display: inline-flex;
+                align-items: center;
+                justify-content: center;
+                margin: 0 !important;
+                font-size: 18px;
+                flex-shrink: 0;
             }
 
-            #${this.tabId} .mod-checkbox input:checked + .mod-checkmark {
-                background: #2196f3;
-                border-color: #2196f3;
+            #${this.tabId} .mod-toggle-label {
+                display: inline-block;
+                line-height: 20px;
             }
+                        #${this.tabId} .mod-button:active {
+                            transform: none;
+                        }
 
-            #${this.tabId} .mod-checkbox input:checked + .mod-checkmark::after {
-                content: "";
-                position: absolute;
-                left: 5px;
-                top: 1px;
-                width: 6px;
-                height: 11px;
-                border: solid white;
-                border-width: 0 2px 2px 0;
-                transform: rotate(45deg);
-            }
+                        /* CHECKBOX */
 
-            #${this.tabId} .mod-checkbox-text {
-                font-size: 14px;
-            }
+                        #${this.tabId} .mod-checkbox {
+                            display: flex;
+                            align-items: center;
+                            width: 100%;
+                            box-sizing: border-box;
+                            padding: 12px;
+                            margin-top: 7px;
+                            border-radius: 6px;
+                            background: var(--mod-button-bg, #eee);
+                            color: var(--mod-button-text, #222);
+                            cursor: pointer;
+                            user-select: none;
+                        }
 
-            #${this.tabId} .mod-checkbox-text i {
-                margin-right: 6px;
-            }
+                        #${this.tabId} .mod-checkbox input {
+                            display: none;
+                        }
+
+                        #${this.tabId} .mod-checkmark {
+                            width: 20px;
+                            height: 20px;
+                            min-width: 20px;
+                            border: 2px solid #888;
+                            border-radius: 4px;
+                            margin-right: 10px;
+                            box-sizing: border-box;
+                            position: relative;
+                        }
+
+                        #${this.tabId} .mod-checkbox input:checked + .mod-checkmark {
+                            background: #2196f3;
+                            border-color: #2196f3;
+                        }
+
+                        #${this.tabId} .mod-checkbox input:checked + .mod-checkmark::after {
+                            content: "";
+                            position: absolute;
+                            left: 5px;
+                            top: 1px;
+                            width: 6px;
+                            height: 11px;
+                            border: solid white;
+                            border-width: 0 2px 2px 0;
+                            transform: rotate(45deg);
+                        }
+
+                        #${this.tabId} .mod-checkbox-text {
+                            font-size: 14px;
+                        }
+
+                        #${this.tabId} .mod-checkbox-text i {
+                            margin-right: 6px;
+                        }
 
 
-            /* SELECT / COMBOBOX */
+                        /* SELECT / COMBOBOX */
 
-            #${this.tabId} .mod-select {
-                width: 100%;
-                box-sizing: border-box;
-                margin-top: 7px;
-            }
+                        #${this.tabId} .mod-select {
+                            width: 100%;
+                            box-sizing: border-box;
+                            margin-top: 7px;
+                        }
 
-            #${this.tabId} .mod-select-label {
-                font-size: 14px;
-                margin-bottom: 5px;
-            }
+                        #${this.tabId} .mod-select-label {
+                            font-size: 14px;
+                            margin-bottom: 5px;
+                        }
 
-            #${this.tabId} .mod-select-label i {
-                margin-right: 6px;
-            }
+                        #${this.tabId} .mod-select-label i {
+                            margin-right: 6px;
+                        }
 
-            #${this.tabId} .mod-select select {
-                width: 100%;
-                box-sizing: border-box;
-                padding: 10px 12px;
-                border: 0;
+                        #${this.tabId} .mod-select select {
+                            width: 100%;
+                            box-sizing: border-box;
+                            padding: 10px 12px;
+                            border: 0;
+                            border-radius: 6px;
+                            background: var(--mod-button-bg, #eee);
+                            color: var(--mod-button-text, #222);
+                            font-size: 14px;
+                            outline: none;
+                            cursor: pointer;
+                        }
+
+
+                    #${this.tabId} #mod-status {
+                max-height: 180px;
+                overflow-y: auto;
+                padding: 8px;
+                margin-top: 8px;
                 border-radius: 6px;
-                background: var(--mod-button-bg, #eee);
-                color: var(--mod-button-text, #222);
-                font-size: 14px;
-                outline: none;
-                cursor: pointer;
-            }
-
-
-            #${this.tabId} .mod-status {
-                font-size: 13px;
-                color: var(--mod-status, #777) !important;
+                background: #111;
+                color: #0f0;
+                font-family: monospace;
+                font-size: 12px;
+                line-height: 1.5;
+                white-space: pre-wrap;
                 word-break: break-word;
             }
 
-            /* DARK MODE */
-            @media (prefers-color-scheme: dark) {
-                #${this.tabId} {
-                    --mod-bg: #121212;
-                    --mod-card-bg: #1e1e1e;
-                    --mod-text: #eeeeee;
-                    --mod-title: #ffffff;
-                    --mod-button-bg: #2a2a2a;
-                    --mod-button-text: #eeeeee;
-                    --mod-status: #aaaaaa;
-                }
+                        /* DARK MODE */
+                        @media (prefers-color-scheme: dark) {
+                            #${this.tabId} {
+                                --mod-bg: #121212;
+                                --mod-card-bg: #1e1e1e;
+                                --mod-text: #eeeeee;
+                                --mod-title: #ffffff;
+                                --mod-button-bg: #2a2a2a;
+                                --mod-button-text: #eeeeee;
+                                --mod-status: #aaaaaa;
+                            }
 
-                #${this.tabId} .mod-card {
-                    box-shadow: 0 2px 6px rgba(0,0,0,.4);
-                }
+                            #${this.tabId} .mod-card {
+                                box-shadow: 0 2px 6px rgba(0,0,0,.4);
+                            }
+                        }
+
+                        /* Nếu Web dùng class dark */
+                        body.dark #${this.tabId},
+                        body.dark-mode #${this.tabId},
+                        html.dark #${this.tabId},
+                        html.dark-mode #${this.tabId} {
+                            --mod-bg: #121212;
+                            --mod-card-bg: #1e1e1e;
+                            --mod-text: #eeeeee;
+                            --mod-title: #ffffff;
+                            --mod-button-bg: #2a2a2a;
+                            --mod-button-text: #eeeeee;
+                            --mod-status: #aaaaaa;
+                        }
+                            /* TOGGLE TRUE / FALSE */
+
+                        #${this.tabId} .mod-toggle {
+                display: flex;
+                align-items: center;
             }
 
-            /* Nếu Web dùng class dark */
-            body.dark #${this.tabId},
-            body.dark-mode #${this.tabId},
-            html.dark #${this.tabId},
-            html.dark-mode #${this.tabId} {
-                --mod-bg: #121212;
-                --mod-card-bg: #1e1e1e;
-                --mod-text: #eeeeee;
-                --mod-title: #ffffff;
-                --mod-button-bg: #2a2a2a;
-                --mod-button-text: #eeeeee;
-                --mod-status: #aaaaaa;
+            #${this.tabId} .mod-toggle .mod-toggle-icon {
+                width: 22px;
+                min-width: 22px;
+                text-align: center;
+                margin-right: 8px;
+                font-size: 18px;
             }
-                /* TOGGLE TRUE / FALSE */
 
-            #${this.tabId} .mod-toggle {
-    display: flex;
-    align-items: center;
-}
-
-#${this.tabId} .mod-toggle .mod-toggle-icon {
-    width: 22px;
-    min-width: 22px;
-    text-align: center;
-    margin-right: 8px;
-    font-size: 18px;
-}
-
-#${this.tabId} .mod-toggle .mod-button-label {
-    margin: 0;
-}
+            #${this.tabId} .mod-toggle .mod-button-label {
+                margin: 0;
+            }
         `;
 
       document.head.appendChild(style);
@@ -1105,11 +1118,21 @@
     // =====================================================
 
     status(text) {
-      const status = document.getElementById("mod-status");
+      const el = document.getElementById("mod-status");
 
-      if (status) {
-        status.textContent = text;
+      if (!el) {
+        return;
       }
+
+      const time = new Date().toLocaleTimeString();
+
+      el.insertAdjacentHTML("beforeend", `<div>[${time}] ${text}</div>`);
+
+      while (el.children.length > 200) {
+        el.removeChild(el.firstElementChild);
+      }
+
+      el.scrollTop = el.scrollHeight;
     },
 
     // =====================================================
@@ -1123,7 +1146,31 @@
       console.log("[MOD] Removed");
     },
   };
+  // Lưu console.log gốc
+  const originalConsoleLog = console.log;
 
+  console.log = function (...args) {
+    // Vẫn giữ console.log của trình duyệt
+    originalConsoleLog.apply(console, args);
+
+    if (window.MOD && typeof MOD.status === "function") {
+      const text = args
+        .map((x) => {
+          if (typeof x === "object" && x !== null) {
+            try {
+              return JSON.stringify(x);
+            } catch {
+              return String(x);
+            }
+          }
+
+          return String(x);
+        })
+        .join(" ");
+
+      MOD.status(text);
+    }
+  };
   // =========================================================
   // GLOBAL
   // =========================================================
