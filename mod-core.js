@@ -124,19 +124,7 @@
     // =====================================================
 
     init() {
-      // -------------------------------------------------
-      // GUARD: chỉ chạy khi URL đúng app mục tiêu
-      // -------------------------------------------------
-      if (!location.href.includes(this.ALLOWED_URL_MATCH)) {
-        console.log(
-          `%c[MOD] Bỏ qua - URL không khớp "${this.ALLOWED_URL_MATCH}"`,
-          "color:#aa0000;font-weight:bold",
-        );
-
-        console.log("[MOD] URL hiện tại:", location.href);
-
-        return;
-      }
+      
 
       if (!Array.isArray(this.BUTTON_GROUPS) || this.BUTTON_GROUPS.length === 0) {
         console.warn(
