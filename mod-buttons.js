@@ -348,15 +348,24 @@
       buttons: [
         {
           id: "mod-delete-tempepub",
-          icon: "fa-file-code",
-          label: "Xóa file Temp",
-          fn: async (MOD) => {
-            const r = await Capacitor.Plugins.Filesystem.readdir({
-              path: "TempEpub",
-              directory: "DATA",
-            });
+          icon: "fa-trash",
+          label: "Xóa TempEpub",
 
-            console.log(r.files);
+          fn: async (MOD) => {
+            try {
+              await Capacitor.Plugins.Filesystem.rmdir({
+                path: "TempEpub",
+                directory: "DATA",
+                recursive: true,
+              });
+
+              console.log("[MOD] Đã xóa toàn bộ TempEpub");
+              MOD.status("Đã xóa TempEpub");
+            } catch (error) {
+              console.error("[MOD] Xóa TempEpub lỗi:", error);
+
+              MOD.status("Lỗi: " + (error.message || error));
+            }
           },
         },
         {
