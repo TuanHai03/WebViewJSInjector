@@ -524,24 +524,24 @@
     // XÓA TOÀN BỘ NỘI DUNG CŨ
     // =====================================================
     content.innerHTML = "";
+    try {
+      // =====================================================
+      // RENDER TỪNG GROUP
+      // =====================================================
+      MOD.BUTTON_GROUPS.forEach((group) => {
+        if (!group || !Array.isArray(group.buttons)) {
+          return;
+        }
 
-    // =====================================================
-    // RENDER TỪNG GROUP
-    // =====================================================
-    MOD.BUTTON_GROUPS.forEach((group) => {
-      if (!group || !Array.isArray(group.buttons)) {
-        return;
-      }
+        const controlsHtml = group.buttons
+          .map((btn) => {
+            // =================================================
+            // TOGGLE
+            // =================================================
+            if (btn.type === "toggle") {
+              const saved = MOD.getSetting(btn.id, btn.defaultValue === true);
 
-      const controlsHtml = group.buttons
-        .map((btn) => {
-          // =================================================
-          // TOGGLE
-          // =================================================
-          if (btn.type === "toggle") {
-            const saved = MOD.getSetting(btn.id, btn.defaultValue === true);
-
-            return `
+              return `
                 <button
                     class="mod-button mod-toggle"
                     id="${btn.id}"
@@ -555,15 +555,15 @@
                     </span>
                 </button>
             `;
-          }
+            }
 
-          // =================================================
-          // CHECKBOX
-          // =================================================
-          if (btn.type === "checkbox") {
-            const saved = MOD.getSetting(btn.id, btn.defaultValue === true);
+            // =================================================
+            // CHECKBOX
+            // =================================================
+            if (btn.type === "checkbox") {
+              const saved = MOD.getSetting(btn.id, btn.defaultValue === true);
 
-            return `
+              return `
                     <label class="mod-checkbox">
 
                         <input
@@ -581,24 +581,24 @@
 
                     </label>
                 `;
-          }
+            }
 
-          // =================================================
-          // SELECT / COMBOBOX
-          // =================================================
-          if (btn.type === "select" || btn.type === "combobox") {
-            const saved = MOD.getSetting(
-              btn.id,
-              btn.defaultValue !== undefined
-                ? btn.defaultValue
-                : btn.options && btn.options.length
-                  ? btn.options[0].value
-                  : "",
-            );
+            // =================================================
+            // SELECT / COMBOBOX
+            // =================================================
+            if (btn.type === "select" || btn.type === "combobox") {
+              const saved = MOD.getSetting(
+                btn.id,
+                btn.defaultValue !== undefined
+                  ? btn.defaultValue
+                  : btn.options && btn.options.length
+                    ? btn.options[0].value
+                    : "",
+              );
 
-            const optionsHtml = (btn.options || [])
-              .map(
-                (option) => `
+              const optionsHtml = (btn.options || [])
+                .map(
+                  (option) => `
                             <option
                                 value="${String(option.value).replace(/"/g, "&quot;")}"
                                 ${
@@ -610,10 +610,10 @@
                                 ${option.label}
                             </option>
                         `,
-              )
-              .join("");
+                )
+                .join("");
 
-            return `
+              return `
                         <div class="mod-select">
 
                             <div class="mod-select-label">
@@ -627,12 +627,12 @@
 
                         </div>
                     `;
-          }
+            }
 
-          // =================================================
-          // BUTTON THƯỜNG
-          // =================================================
-          return `
+            // =================================================
+            // BUTTON THƯỜNG
+            // =================================================
+            return `
                 <button
                     class="mod-button"
                     id="${btn.id}"
@@ -641,17 +641,17 @@
                     ${btn.label}
                 </button>
             `;
-        })
-        .join("");
+          })
+          .join("");
 
-      // =====================================================
-      // TẠO CARD
-      // =====================================================
-      const card = document.createElement("div");
+        // =====================================================
+        // TẠO CARD
+        // =====================================================
+        const card = document.createElement("div");
 
-      card.className = "mod-card";
+        card.className = "mod-card";
 
-      card.innerHTML = `
+        card.innerHTML = `
             <div class="mod-card-title">
                 <i class="fas ${group.icon || "fa-tools"}"></i>
 
@@ -661,13 +661,13 @@
             ${controlsHtml}
         `;
 
-      content.appendChild(card);
-    });
-    const modstatus = document.createElement("div");
+        content.appendChild(card);
+      });
+      const modstatus = document.createElement("div");
 
-    modstatus.className = "mod-card";
+      modstatus.className = "mod-card";
 
-    modstatus.innerHTML = `
+      modstatus.innerHTML = `
     <div class="mod-card-title">
         <i class="fas fa-info-circle"></i>
         Status
@@ -678,7 +678,15 @@
     </div>
 `;
 
-    content.appendChild(modstatus);
+      content.appendChild(modstatus);
+    } catch (error) {
+      console.error(
+        "[MOD] Lỗi render nút chức năng:",
+        error && error.message ? error.message : error,
+      );
+
+      console.error("[MOD] Stack:", error && error.stack);
+    }
     // =====================================================
     // BIND EVENT SAU KHI RENDER
     // =====================================================
