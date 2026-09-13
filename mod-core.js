@@ -652,14 +652,19 @@
         card.className = "mod-card";
 
         card.innerHTML = `
-            <div class="mod-card-title">
-                <i class="fas ${group.icon || "fa-tools"}"></i>
+                        <div class="mod-card-title mod-collapse">
+                            <div>
+                                <i class="fas ${group.icon || "fa-tools"}"></i>
+                                ${group.title || ""}
+                            </div>
 
-                ${group.title || ""}
-            </div>
+                            <i class="fas fa-chevron-down mod-collapse-icon"></i>
+                        </div>
 
-            ${controlsHtml}
-        `;
+                        <div class="mod-card-content">
+                            ${controlsHtml}
+                        </div>
+                    `;
 
         content.appendChild(card);
       });
@@ -679,6 +684,22 @@
 `;
 
       content.appendChild(modstatus);
+      content.querySelectorAll(".mod-collapse").forEach((title) => {
+        title.addEventListener("click", function () {
+          const card = this.closest(".mod-card");
+          const body = card.querySelector(".mod-card-content");
+          const icon = this.querySelector(".mod-collapse-icon");
+
+          if (!body) return;
+
+          const hidden = body.style.display === "none";
+
+          body.style.display = hidden ? "" : "none";
+
+          icon.classList.toggle("fa-chevron-down", hidden);
+          icon.classList.toggle("fa-chevron-up", !hidden);
+        });
+      });
     } catch (error) {
       console.error(
         "[MOD] Lỗi render nút chức năng:",
