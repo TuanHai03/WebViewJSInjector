@@ -13,7 +13,39 @@
 
   MOD.previousTab = 0;
   // Sẽ được mod-buttons.js gán đè trước khi renderGroup chạy
-  MOD.BUTTON_GROUPS = [];
+  MOD.BUTTON_GROUPS = [
+    {
+      title: "JavaScript",
+      icon: "fa-code",
+      buttons: [
+        {
+          id: "mod-delete-datajs",
+          icon: "fa-trash",
+          label: "Xóa dữ liệu JS",
+
+          fn: async (MOD) => {
+            try {
+              const result = await SQLite.execute({
+                database: "app_v2_db",
+                statements: `
+                    DELETE FROM mod_scripts;
+                `,
+                values: [],
+              });
+
+              console.log("[MOD] Đã xóa toàn bộ dữ liệu JS");
+
+              MOD.status("Đã xóa toàn bộ dữ liệu JS");
+            } catch (error) {
+              console.error("[MOD] Xóa dữ liệu JS lỗi:", error);
+
+              MOD.status("Lỗi: " + (error.message || error));
+            }
+          },
+        },
+      ],
+    },
+  ];
 
   // =====================================================
   // PERSISTENT SETTINGS
@@ -515,7 +547,7 @@
       },
       true,
     );
-
+    MOD.renderGroup();
     // GO BACK
     document.getElementById("mod-go-back").addEventListener("click", () => {
       MOD.goBack();
