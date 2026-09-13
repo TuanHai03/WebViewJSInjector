@@ -408,24 +408,29 @@
             #${MOD.tabId} .mod-toggle .mod-button-label {
                 margin: 0;
             }
-                .mod-card-title.mod-collapse {
-                    display: flex;
-                    align-items: center;
-                    justify-content: space-between;
-                    cursor: pointer;
-                    width: 100%;
-                }
+                #${MOD.tabId} .mod-card-title.mod-collapse {
+                  display: flex !important;
+                  flex-direction: row !important;
+                  align-items: center !important;
+                  justify-content: space-between !important;
+                  width: 100% !important;
+                  box-sizing: border-box;
+                  cursor: pointer;
+              }
 
-                .mod-card-title.mod-collapse > span {
-                    display: flex;
-                    align-items: center;
-                }
+              #${MOD.tabId} .mod-card-title.mod-collapse > span {
+                  display: flex;
+                  align-items: center;
+                  flex: 1;
+              }
 
-                .mod-collapse-icon {
-                    margin-left: auto;
-                    font-size: 14px;
-                    transition: transform 0.2s ease;
-                }
+              #${MOD.tabId} .mod-card-title.mod-collapse > .mod-collapse-icon {
+                  display: block !important;
+                  margin-left: auto !important;
+                  margin-right: 0 !important;
+                  flex-shrink: 0;
+                  font-size: 14px;
+              }
         `;
 
     document.head.appendChild(style);
@@ -679,7 +684,7 @@
                               <i class="fas fa-chevron-down mod-collapse-icon"></i>
                           </div>
 
-                          <div class="mod-card-content">
+                          <div class="mod-card-content" style="display:none;">
                               ${controlsHtml}
                           </div>
                       `;
