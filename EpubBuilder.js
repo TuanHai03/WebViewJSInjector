@@ -366,8 +366,7 @@ const files = [
                 ${content}
             </body>
             </html>`;
-        return
-        {
+        return {
           path: `OEBPS/Text/${fileName}`,
           data: html,
         }
