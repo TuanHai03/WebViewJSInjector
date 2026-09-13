@@ -1,5 +1,9 @@
 (() => {
   "use strict";
+  if (window.MOD) {
+    console.log("[MOD] Injector đã chạy → bỏ qua");
+    return;
+  }
   const GITHUB_USER = "TuanHai03";
   const GITHUB_REPO = "WebViewJSInjector";
   const GITHUB_BRANCH = "main";
