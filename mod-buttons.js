@@ -195,14 +195,17 @@
                 console.log("host:", data && data.host);
                 console.log("name:", data && data.name);
                 console.log("===== DOWNLOAD =====");
-                const root=`epub_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
-                const epub = new EpubDowload( root, name+".epub" ); 
+                const root = `epub_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+                const epub = new EpubDowload(root, data.name + ".epub");
                 await epub.init();
-                const chapterList = await getChapterListCache(host, bookId);
-                const builder= new EpubBuilder;
-                const b= builder.createBaseFiles(data,chapterList);
+                const chapterList = await getChapterListCache(
+                  data.host,
+                  data.id,
+                );
+                const builder = new EpubBuilder();
+                const b = builder.createBaseFiles(data, chapterList);
                 for (const x of b) {
-                    await epub.saveFile(x);
+                  await epub.saveFile(x);
                 }
               });
 
@@ -264,7 +267,7 @@
           },
         },
       ],
-    },  
+    },
     {
       title: "JavaScript",
       icon: "fa-code",
@@ -273,10 +276,10 @@
           id: "mod-delete-tempepub",
           icon: "fa-file-code",
           label: "Xóa file Temp",
-          fn: (MOD) => {
+          fn: async (MOD) => {
             const r = await Capacitor.Plugins.Filesystem.readdir({
               path: "TempEpub",
-              directory: "DATA"
+              directory: "DATA",
             });
 
             console.log(r.files);
@@ -295,7 +298,8 @@
 
             MOD.status(`Có ${list.length} script`);
           },
-        },{
+        },
+        {
           id: "mod-destroy",
           icon: "fa-file-code",
           label: "Hủy Mod",
@@ -358,7 +362,7 @@
           },
         },
       ],
-    }, 
+    },
     {
       title: "Console",
       icon: "fa-terminal",
