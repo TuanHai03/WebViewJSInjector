@@ -360,7 +360,7 @@
             </body>
             </html>`;
       return {
-        path: `OEBPS/Text/${id}`,
+        path: `OEBPS/Text/${id}.xhtml`,
         data: html,
       };
     }
