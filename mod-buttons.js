@@ -152,7 +152,9 @@
                 .forEach(function (btn) {
                   btn.remove();
                 });
-
+ if (window.MOD) {
+            delete window.MOD;
+        }
               return;
             }
 
