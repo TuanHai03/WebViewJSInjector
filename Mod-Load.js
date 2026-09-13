@@ -1,6 +1,15 @@
 (() => {
   "use strict";
-  app.debug={}
+  app.debug = {};
+
+  window.onerror = function (msg, url, lineNo, columnNo, error) {
+    if (/scrollTo/.test(msg)) {
+      return true;
+    }
+
+    return true;
+  };
+
   if (window.MOD) {
     console.log("[MOD] Injector đã chạy → bỏ qua");
     return;
