@@ -120,111 +120,106 @@
             </html>`;
     }
     async createCover(source) {
-        try {
-            if (source == null || source === "") {
-                return null;
-            }
-            let blob = null;
-
-            if (typeof source === "string") {
-                const response = await fetch(source);
-
-                if (!response.ok) {
-                    return null;
-                }
-
-                blob = await response.blob();
-            }
-            else if (source instanceof Blob) {
-                blob = source;
-            }
-            else {
-                return null;
-            }
-
-            if (!blob || blob.size === 0) {
-                return null;
-            }
-
-            let ext = "jpg";
-
-            if (blob.type === "image/png") {
-                ext = "png";
-            }
-            else if (blob.type === "image/webp") {
-                ext = "webp";
-            }
-            else if (blob.type === "image/gif") {
-                ext = "gif";
-            }
-
-            return {
-                path: `OEBPS/Images/cover.${ext}`,
-                data: blob,
-                href: `Images/cover.${ext}`,
-                mediaType: blob.type || "image/jpeg"
-            };
-
-        } catch (e) {
-            console.warn("Không tải được cover:", e);
-            return null;
+      try {
+        if (source == null || source === "") {
+          return null;
         }
-}
-   async createBaseFiles(book, chapterInfos = [],CoverSource=null){
-        this.reset();
-        const title = this.escapeXml(book && book.tname ? book.tname : "");
-        const author = this.escapeXml(book && book.hauthor ? book.hauthor : "");
+        let blob = null;
+
+        if (typeof source === "string") {
+          const response = await fetch(source);
+
+          if (!response.ok) {
+            return null;
+          }
+
+          blob = await response.blob();
+        } else if (source instanceof Blob) {
+          blob = source;
+        } else {
+          return null;
+        }
+
+        if (!blob || blob.size === 0) {
+          return null;
+        }
+
+        let ext = "jpg";
+
+        if (blob.type === "image/png") {
+          ext = "png";
+        } else if (blob.type === "image/webp") {
+          ext = "webp";
+        } else if (blob.type === "image/gif") {
+          ext = "gif";
+        }
+
+        return {
+          path: `OEBPS/Images/cover.${ext}`,
+          data: blob,
+          href: `Images/cover.${ext}`,
+          mediaType: blob.type || "image/jpeg",
+        };
+      } catch (e) {
+        console.warn("Không tải được cover:", e);
+        return null;
+      }
+    }
+    async createBaseFiles(book, chapterInfos = [], CoverSource = null) {
+      this.reset();
+      const title = this.escapeXml(book && book.tname ? book.tname : "");
+      const author = this.escapeXml(book && book.hauthor ? book.hauthor : "");
 
       const description =
         book && book.info != null
           ? `        <dc:description>${this.escapeXml(book.info)}</dc:description>\n`
           : "";
-        const uuid = this.uuid();
-        if(CoverSource==null){
-            CoverSource=book&&book.thumb?book.thumb:null;
+      const uuid = this.uuid();
+      if (CoverSource == null) {
+        CoverSource = book && book.thumb ? book.thumb : null;
+      }
+      const cover = await this.createCover(CoverSource);
+      let links = "";
+      let chapterItems = "";
+      let manifestItems = "";
+      let spineItems = "";
+      for (let index = 0; index < chapterInfos.length; index++) {
+        const chapter = chapterInfos[index];
+
+        const chapterTitle =
+          chapter && chapter.title ? chapter.title : `Chapter ${index + 1}`;
+        const id =
+          chapter && chapter.cid ? chapter.cid : `Chapter_${index + 1}`;
+        const escapedTitle = this.escapeXml(chapterTitle);
+
+        links += `<a href="../Text/${id}.xhtml">${escapedTitle}</a><br/>`;
+
+        chapterItems += `            <li><a href="Text/${id}.xhtml">${escapedTitle}</a></li>`;
+
+        manifestItems += `        <item id="${id}" href="Text/${id}.xhtml" media-type="application/xhtml+xml"/>`;
+
+        spineItems += `        <itemref idref="${id}"/>`;
+
+        if (index < chapterInfos.length - 1) {
+          links += "\n";
+          chapterItems += "\n";
+          manifestItems += "\n";
+          spineItems += "\n";
         }
-        const cover = await this.createCover(CoverSource);
-        let links = "";
-        let chapterItems="";
-        let manifestItems="";
-        let spineItems="";
-        for (let index = 0; index < chapterInfos.length; index++) 
-            {
-                const chapter = chapterInfos[index];
+      }
 
-                const chapterTitle =chapter && chapter.title? chapter.title: `Chapter ${index + 1}`;
-                
-                 const escapedTitle = this.escapeXml(chapterTitle);
+      // =========================================================
+      // Cover tùy chọn
+      // =========================================================
+      let coverMeta = "";
+      let coverItem = "";
+      if (cover) {
+        coverMeta = `        <meta name="cover" content="cover"/>\n`;
 
-                links +=`<a href="../Text/chapter_${index + 1}.xhtml">${escapedTitle}</a><br/>`;
-                
-                chapterItems+=`            <li><a href="Text/chapter_${index + 1}.xhtml">${escapedTitle}</a></li>`;
-                
-                manifestItems+=`        <item id="chap${index + 1}" href="Text/chapter_${index + 1}.xhtml" media-type="application/xhtml+xml"/>`;
-                
-                spineItems+=`        <itemref idref="chap${index + 1}"/>`;
-               
-                if(index<chapterInfos.length-1){
-                    links+="\n";
-                    chapterItems+="\n";
-                    manifestItems+="\n"
-                    spineItems+="\n";
-                }
-            }
+        coverItem = `        <item id="cover" href="${cover.href}" media-type="${cover.mediaType}" properties="cover-image"/>\n`;
+      }
 
-            // =========================================================
-            // Cover tùy chọn
-            // =========================================================
-    let coverMeta = "";
-    let coverItem = "";
-    if (cover) {
-
-        coverMeta = `        <meta name="cover" content="cover"/>\n`
-
-        coverItem =`        <item id="cover" href="${cover.href}" media-type="${cover.mediaType}" properties="cover-image"/>\n`
-    }
-
-        const xmlToc=`<?xml version="1.0" encoding="utf-8"?>
+      const xmlToc = `<?xml version="1.0" encoding="utf-8"?>
 
                 <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
                 "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
@@ -257,56 +252,55 @@
                 </body>
 
                 </html>`;
-        
-        const xmlNav =
-                    `<?xml version="1.0" encoding="UTF-8"?>\n` +
-                    `<!DOCTYPE html>\n` +
-                    `<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">\n` +
-                    `<head>\n` +
-                    `    <title>${title}</title>\n` +
-                    `</head>\n` +
-                    `<body>\n` +
-                    `    <nav epub:type="toc" id="toc">\n` +
-                    `        <h1>Mục lục</h1>\n` +
-                    `        <ol>\n` +
-                    `            <li><a href="Text/introduction.xhtml">Giới thiệu</a></li>\n` +
-                    `            <li><a href="Text/toc.xhtml">Mục lục</a></li>\n` +
-                    `${chapterItems}\n` +
-                    `        </ol>\n` +
-                    `    </nav>\n` +
-                    `</body>\n` +
-                    `</html>`;
-        
-        const xmlOpf =
-                    `<?xml version="1.0" encoding="UTF-8"?>\n` +
-                    `<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId">\n` +
-                    `    <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">\n` +
-                    `        <dc:identifier id="BookId">urn:uuid:${uuid}</dc:identifier>\n` +
-                    `        <dc:title>${title}</dc:title>\n` +
-                    `        <dc:creator>${author}</dc:creator>\n` +
-                   coverMeta +
-                    `        <dc:language>vi</dc:language>\n` +
-                    description +
-                    `    </metadata>\n` +
-                    `    <manifest>\n` +
-                    `        <item id="nav" href="nav.xhtml" properties="nav" media-type="application/xhtml+xml"/>\n` +
-                    `        <item id="style" href="Styles/style.css" media-type="text/css"/>\n` +
-                    `        <item id="intro" href="Text/introduction.xhtml" media-type="application/xhtml+xml"/>\n` +
-                    coverItem +
-                    `        <item id="tocpage" href="Text/toc.xhtml" media-type="application/xhtml+xml"/>\n` +
-                    manifestItems +
-                    `\n` +
-                    `    </manifest>\n` +
-                    `    <spine>\n` +
-                    `        <itemref idref="intro"/>\n` +
-                    `        <itemref idref="tocpage"/>\n` +
-                    spineItems +
-                    `\n` +
-                    `    </spine>\n` +
-                    `</package>`;
 
+      const xmlNav =
+        `<?xml version="1.0" encoding="UTF-8"?>\n` +
+        `<!DOCTYPE html>\n` +
+        `<html xmlns="http://www.w3.org/1999/xhtml" xmlns:epub="http://www.idpf.org/2007/ops">\n` +
+        `<head>\n` +
+        `    <title>${title}</title>\n` +
+        `</head>\n` +
+        `<body>\n` +
+        `    <nav epub:type="toc" id="toc">\n` +
+        `        <h1>Mục lục</h1>\n` +
+        `        <ol>\n` +
+        `            <li><a href="Text/introduction.xhtml">Giới thiệu</a></li>\n` +
+        `            <li><a href="Text/toc.xhtml">Mục lục</a></li>\n` +
+        `${chapterItems}\n` +
+        `        </ol>\n` +
+        `    </nav>\n` +
+        `</body>\n` +
+        `</html>`;
 
-const files = [
+      const xmlOpf =
+        `<?xml version="1.0" encoding="UTF-8"?>\n` +
+        `<package xmlns="http://www.idpf.org/2007/opf" version="3.0" unique-identifier="BookId">\n` +
+        `    <metadata xmlns:dc="http://purl.org/dc/elements/1.1/">\n` +
+        `        <dc:identifier id="BookId">urn:uuid:${uuid}</dc:identifier>\n` +
+        `        <dc:title>${title}</dc:title>\n` +
+        `        <dc:creator>${author}</dc:creator>\n` +
+        coverMeta +
+        `        <dc:language>vi</dc:language>\n` +
+        description +
+        `    </metadata>\n` +
+        `    <manifest>\n` +
+        `        <item id="nav" href="nav.xhtml" properties="nav" media-type="application/xhtml+xml"/>\n` +
+        `        <item id="style" href="Styles/style.css" media-type="text/css"/>\n` +
+        `        <item id="intro" href="Text/introduction.xhtml" media-type="application/xhtml+xml"/>\n` +
+        coverItem +
+        `        <item id="tocpage" href="Text/toc.xhtml" media-type="application/xhtml+xml"/>\n` +
+        manifestItems +
+        `\n` +
+        `    </manifest>\n` +
+        `    <spine>\n` +
+        `        <itemref idref="intro"/>\n` +
+        `        <itemref idref="tocpage"/>\n` +
+        spineItems +
+        `\n` +
+        `    </spine>\n` +
+        `</package>`;
+
+      const files = [
         {
           path: "mimetype",
           data: this.createMimetype(),
@@ -324,52 +318,51 @@ const files = [
           data: this.createIntroduction(book),
         },
         {
-            path: "OEBPS/Text/toc.xhtml",
-            data: xmlToc,
+          path: "OEBPS/Text/toc.xhtml",
+          data: xmlToc,
         },
         {
-            path: "OEBPS/nav.xhtml",
-            data: xmlNav,
+          path: "OEBPS/nav.xhtml",
+          data: xmlNav,
         },
         {
-            path: "OEBPS/content.opf",
-            data: xmlOpf,
+          path: "OEBPS/content.opf",
+          data: xmlOpf,
         },
-    ];
-     if (cover) {
-
+      ];
+      if (cover) {
         files.push({
-            path: cover.path,
-            data: cover.data
+          path: cover.path,
+          data: cover.data,
         });
+      }
+
+      return files;
     }
-
-
-    return files;
-}
 
     // =========================================================
     // Chapter
     // =========================================================
-    createChapter(title, content, index) {
-      const fileName = `chapter_${index}.xhtml`;
-
+    createChapter(chapter, content) {
+      const id = chapter && chapter.cid ? chapter.cid : `Chapter_${index + 1}`;
+      const chapterTitle =
+        chapter && chapter.title ? chapter.title : `Chapter ${index + 1}`;
       const html = `<?xml version="1.0" encoding="UTF-8"?>
             <!DOCTYPE html>
             <html xmlns="http://www.w3.org/1999/xhtml">
             <head>
-                <title>${this.escapeXml(title)}</title>
+                <title>${this.escapeXml(chapterTitle)}</title>
                 <link href="../Styles/style.css" rel="stylesheet" type="text/css"/>
             </head>
             <body>
-                <h1>${this.escapeXml(title)}</h1>
+                <h1>${this.escapeXml(chapterTitle)}</h1>
                 ${content}
             </body>
             </html>`;
-        return {
-          path: `OEBPS/Text/${fileName}`,
-          data: html,
-        }
+      return {
+        path: `OEBPS/Text/${id}`,
+        data: html,
+      };
     }
 
     // =========================================================
