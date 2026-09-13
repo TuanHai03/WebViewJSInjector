@@ -189,172 +189,20 @@
               btn.addEventListener("click", async function (e) {
                 e.preventDefault();
                 e.stopPropagation();
-
-                console.log("===== DOWNLOAD =====");
+                console.log("===== DOWNLOAD INFO =====");
                 console.log("Book:", data);
-                console.log("lid:", data && data.lid);
                 console.log("id:", data && data.id);
                 console.log("host:", data && data.host);
                 console.log("name:", data && data.name);
-
-                // =====================================================
-                // LẤY THÔNG TIN BOOK
-                // =====================================================
-
-                try {
-                  const host = data.host;
-                  const bookId = data.id;
-
-                  console.log("===== BOOK INFO =====");
-                  console.log("host:", host);
-                  console.log("id:", bookId);
-                  console.log("name:", data.name);
-                  console.log("author:", data.author);
-
-                  // ===================================================
-                  // LẤY CHAPTER LIST
-                  // ===================================================
-
-                  const chapterList = await getChapterListCache(host, bookId);
-
-                  console.log("===== CHAPTER LIST =====");
-                  console.log("Total:", chapterList.length);
-                  console.table(chapterList);
-
-                  // ===================================================
-                  // LẤY OFFLINE BOOK
-                  // ===================================================
-
-                 const book = app.offlineBook.getSingleton(host, bookId, data);
-                  console.log("OfflineBook:", book);
-
-                  // ===================================================
-                  // LẤY DANH SÁCH CHAPTER ĐÃ DOWNLOAD
-                  // ===================================================
-
-                  const downloadedIds = await book.getChapterDownloaded();
-
-                  console.log("===== DOWNLOADED CHAPTERS =====");
-                  console.log("Total:", downloadedIds.length);
-                  console.log(downloadedIds);
-
-                  // ===================================================
-                  // TẠO SET ĐỂ KIỂM TRA CHAPTER ĐÃ DOWNLOAD
-                  // ===================================================
-
-                  const downloadedSet = new Set(
-                    downloadedIds.map(function (id) {
-                      return String(id);
-                    }),
-                  );
-
-                  // ===================================================
-                  // LẤY CONTENT
-                  // ===================================================
-
-                  const chapters = [];
-
-                  for (let i = 0; i < chapterList.length; i++) {
-                    const chapter = chapterList[i];
-
-                    if (!chapter) {
-                      continue;
-                    }
-
-                    const cid = String(chapter.cid);
-
-                    // Chưa download thì bỏ qua
-                    if (!downloadedSet.has(cid)) {
-                      continue;
-                    }
-
-                    const title = chapter.title
-                      ? String(chapter.title).trim()
-                      : "";
-
-                    const content = await book.getChapter(cid);
-
-                    chapters.push({
-                      cid: cid,
-                      title: title,
-                      content: content || "",
-                    });
-
-                    console.log(
-                      "CHAPTER:",
-                      cid,
-                      title,
-                      "size:",
-                      content ? content.length : 0,
-                    );
-                  }
-
-                  // ===================================================
-                  // KẾT QUẢ
-                  // ===================================================
-
-                  console.log("===== DOWNLOAD DATA =====");
-
-                  console.log("Tổng chapter:", chapterList.length);
-
-                  console.log("Đã download:", downloadedIds.length);
-
-                  console.log("Đọc được:", chapters.length);
-
-                  console.table(
-                    chapters.map(function (chapter) {
-                      return {
-                        cid: chapter.cid,
-                        title: chapter.title,
-                        size: chapter.content.length,
-                      };
-                    }),
-                  );
-
-                  // ===================================================
-                  // IN CONTENT
-                  // ===================================================
-
-                  for (let i = 0; i < chapters.length; i++) {
-                    console.log("===== CHAPTER " + (i + 1) + " =====");
-
-                    console.log("CID:", chapters[i].cid);
-
-                    console.log("TITLE:", chapters[i].title);
-
-                    console.log("CONTENT:", chapters[i].content);
-                  }
-
-                  // ===================================================
-                  // DATA CHO CREATE EPUB
-                  // ===================================================
-
-                  const epubData = {
-                    book: data,
-                    host: host,
-                    id: bookId,
-                    lid: data.lid,
-                    name: data.name,
-                    author: data.author,
-                    chapters: chapters,
-                  };
-
-                  console.log("===== EPUB DATA =====");
-                  console.log(epubData);
-
-                  // ===================================================
-                  // GỌI CREATE EPUB
-                  // ===================================================
-
-                  if (typeof createEpub === "function") {
-                    console.log("[MOD] Gọi createEpub()");
-
-                    await createEpub(epubData);
-                  } else {
-                    console.log("[MOD] Chưa có createEpub");
-                  }
-                } catch (error) {
-                  console.error("[MOD] DOWNLOAD ERROR:", error);
+                console.log("===== DOWNLOAD =====");
+                const root=`epub_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+                const epub = new EpubDowload( root, name+".epub" ); 
+                await epub.init();
+                const chapterList = await getChapterListCache(host, bookId);
+                const builder= new EpubBuilder;
+                const b= builder.createBaseFiles(data,chapterList);
+                for (const x of b) {
+                    await epub.saveFile(x);
                 }
               });
 
@@ -416,30 +264,38 @@
           },
         },
       ],
-    },
-    {
-      title: "Console",
-      icon: "fa-terminal",
-      buttons: [
-        {
-          id: "mod-console-clear",
-          icon: "fa-trash",
-          label: "Clear Console",
-          fn: (MOD) => {
-            console.clear();
-            const el = document.getElementById("mod-status");
-            if (el) {
-              el.innerHTML = "";
-            }
-          },
-        },
-      ],
-    },
+    },  
     {
       title: "JavaScript",
       icon: "fa-code",
       buttons: [
         {
+          id: "mod-delete-tempepub",
+          icon: "fa-file-code",
+          label: "Xóa file Temp",
+          fn: (MOD) => {
+            const r = await Capacitor.Plugins.Filesystem.readdir({
+              path: "TempEpub",
+              directory: "DATA"
+            });
+
+            console.log(r.files);
+          },
+        },
+        {
+          id: "mod-script-list",
+          icon: "fa-file-code",
+          label: "Danh sách Script",
+          fn: (MOD) => {
+            const list = Array.from(document.scripts).map(
+              (x) => x.src || "[inline]",
+            );
+
+            console.log("[MOD] Scripts:", list);
+
+            MOD.status(`Có ${list.length} script`);
+          },
+        },{
           id: "mod-destroy",
           icon: "fa-file-code",
           label: "Hủy Mod",
@@ -501,18 +357,22 @@
             }
           },
         },
+      ],
+    }, 
+    {
+      title: "Console",
+      icon: "fa-terminal",
+      buttons: [
         {
-          id: "mod-script-list",
-          icon: "fa-file-code",
-          label: "Danh sách Script",
+          id: "mod-console-clear",
+          icon: "fa-trash",
+          label: "Clear Console",
           fn: (MOD) => {
-            const list = Array.from(document.scripts).map(
-              (x) => x.src || "[inline]",
-            );
-
-            console.log("[MOD] Scripts:", list);
-
-            MOD.status(`Có ${list.length} script`);
+            console.clear();
+            const el = document.getElementById("mod-status");
+            if (el) {
+              el.innerHTML = "";
+            }
           },
         },
       ],
