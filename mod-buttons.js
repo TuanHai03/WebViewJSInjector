@@ -193,17 +193,17 @@
                 console.log("Book:", data);
                 console.log("id:", data && data.id);
                 console.log("host:", data && data.host);
-                console.log("name:", data && data.name);
+                console.log("name:", data && data.tname);
                 console.log("===== DOWNLOAD =====");
                 const root = `epub_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
-                const epub = new EpubDowload(root, data.name + ".epub");
+                const epub = new EpubDowload(root, data.tname + ".epub");
                 await epub.init();
                 const chapterList = await getChapterListCache(
                   data.host,
                   data.id,
                 );
                 const builder = new EpubBuilder();
-                const b = builder.createBaseFiles(data, chapterList);
+                const b = await builder.createBaseFiles(data, chapterList);
                 for (const x of b) {
                   await epub.saveFile(x);
                 }
