@@ -661,7 +661,7 @@
                             <i class="fas fa-chevron-down mod-collapse-icon"></i>
                         </div>
 
-                        <div class="mod-card-content">
+                        <div class="mod-card-content" style="display:none;">
                             ${controlsHtml}
                         </div>
                     `;
