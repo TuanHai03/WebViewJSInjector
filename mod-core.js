@@ -430,7 +430,17 @@
                   margin-right: 0 !important;
                   flex-shrink: 0;
                   font-size: 14px;
-              }
+                }
+                    button.mod-download-btn {
+                        margin-left: 8px;
+                        padding: 5px 10px;
+                        border: 0;
+                        border-radius: 5px;
+                        background: #2196f3;
+                        color: white;
+                        font-size: 12px;
+                        cursor: pointer;
+                    }
         `;
 
     document.head.appendChild(style);
