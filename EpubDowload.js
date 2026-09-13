@@ -1,29 +1,34 @@
 (() => {
   "use strict";
 
-  // ========================================================= 
-  //  CONSTRUCTOR 
-  //  tempName: Tên thư mục tạm. 
-  //  outputFileName: Tên file xuất cuối cùng. 
-  // Ví dụ:  new EpubDowload( "Epub123", "book.epub"  ); 
-  // DATA sẽ là: /data/user/0/com.sangtacviet.mobilereader/files/tempEpub/Epub123
-  // // =========================================================
-    constructor(tempName, outputFileName) 
-    { 
-        if (!tempName) { throw new Error("tempName is required"); } 
-        if (!outputFileName) { throw new Error("outputFileName is required"); } 
-        // ------------------------------------------------------- 
-        // Làm sạch tên thư mục // ------------------------------------------------------- 
-        this.tempName = String(tempName) .replace(/^\/+|\/+$/g, ""); 
-        // ------------------------------------------------------- 
-        // Làm sạch tên file 
-        // ------------------------------------------------------- 
-        this.fileName = EpubDowload.toValidFileName( outputFileName ); 
-        // ------------------------------------------------------- 
-        // Root thực tế 
-        // ------------------------------------------------------- 
-        this.root = `TempEpub/${this.tempName}`; 
-        this.inited = false; this.finished = false; 
+  class EpubDowload {
+    // =========================================================
+    //  CONSTRUCTOR
+    //  tempName: Tên thư mục tạm.
+    //  outputFileName: Tên file xuất cuối cùng.
+    // Ví dụ:  new EpubDowload( "Epub123", "book.epub"  );
+    // DATA sẽ là: /data/user/0/com.sangtacviet.mobilereader/files/tempEpub/Epub123
+    // // =========================================================
+    constructor(tempName, outputFileName) {
+      if (!tempName) {
+        throw new Error("tempName is required");
+      }
+      if (!outputFileName) {
+        throw new Error("outputFileName is required");
+      }
+      // -------------------------------------------------------
+      // Làm sạch tên thư mục // -------------------------------------------------------
+      this.tempName = String(tempName).replace(/^\/+|\/+$/g, "");
+      // -------------------------------------------------------
+      // Làm sạch tên file
+      // -------------------------------------------------------
+      this.fileName = EpubDowload.toValidFileName(outputFileName);
+      // -------------------------------------------------------
+      // Root thực tế
+      // -------------------------------------------------------
+      this.root = `TempEpub/${this.tempName}`;
+      this.inited = false;
+      this.finished = false;
     }
 
     // =========================================================
@@ -351,29 +356,27 @@
       }
     }
 
-static toValidFileName(name, defaultName = "Book") {
+    static toValidFileName(name, defaultName = "Book") {
+      let result = String(name || "").trim();
 
-    let result = String(name || "").trim();
+      // Ký tự không hợp lệ trên Windows / Android
+      result = result.replace(/[<>:"/\\|?*\x00-\x1F]/g, "_");
 
-    // Ký tự không hợp lệ trên Windows / Android
-    result = result.replace(/[<>:"/\\|?*\x00-\x1F]/g, "_");
+      // Không để kết thúc bằng dấu chấm hoặc khoảng trắng
+      result = result.replace(/[. ]+$/g, "");
 
-    // Không để kết thúc bằng dấu chấm hoặc khoảng trắng
-    result = result.replace(/[. ]+$/g, "");
-
-    // Xử lý tên rỗng
-    if (!result) {
+      // Xử lý tên rỗng
+      if (!result) {
         result = defaultName;
-    }
+      }
 
-    // Tránh tên đặc biệt của Windows
-    if (/^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/i.test(result)) {
+      // Tránh tên đặc biệt của Windows
+      if (/^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/i.test(result)) {
         result = "_" + result;
+      }
+
+      return result;
     }
-
-    return result;
-}
-
   }
 
   // ===========================================================
