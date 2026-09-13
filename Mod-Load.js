@@ -285,7 +285,7 @@
         // SQL KHÔNG CÓ HOẶC INJECT LỖI
         // → FETCH GITHUB
         // ============================================================
-        if ((await updateFile(name)) == false) {
+        if ((await this.updateFile(name)) == false) {
           return false;
         }
       }
