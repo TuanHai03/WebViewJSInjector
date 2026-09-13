@@ -408,6 +408,24 @@
             #${MOD.tabId} .mod-toggle .mod-button-label {
                 margin: 0;
             }
+                .mod-card-title.mod-collapse {
+                    display: flex;
+                    align-items: center;
+                    justify-content: space-between;
+                    cursor: pointer;
+                    width: 100%;
+                }
+
+                .mod-card-title.mod-collapse > span {
+                    display: flex;
+                    align-items: center;
+                }
+
+                .mod-collapse-icon {
+                    margin-left: auto;
+                    font-size: 14px;
+                    transition: transform 0.2s ease;
+                }
         `;
 
     document.head.appendChild(style);
@@ -652,19 +670,19 @@
         card.className = "mod-card";
 
         card.innerHTML = `
-                        <div class="mod-card-title mod-collapse">
-                            <div>
-                                <i class="fas ${group.icon || "fa-tools"}"></i>
-                                ${group.title || ""}
-                            </div>
+                          <div class="mod-card-title mod-collapse">
+                              <span>
+                                  <i class="fas ${group.icon || "fa-tools"}"></i>
+                                  ${group.title || ""}
+                              </span>
 
-                            <i class="fas fa-chevron-down mod-collapse-icon"></i>
-                        </div>
+                              <i class="fas fa-chevron-down mod-collapse-icon"></i>
+                          </div>
 
-                        <div class="mod-card-content" style="display:none;">
-                            ${controlsHtml}
-                        </div>
-                    `;
+                          <div class="mod-card-content">
+                              ${controlsHtml}
+                          </div>
+                      `;
 
         content.appendChild(card);
       });
