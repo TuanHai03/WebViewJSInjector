@@ -9,7 +9,7 @@
   // Toàn bộ phần "máy móc" (tạo tab, style, sự kiện...) nằm ở
   // mod-core.js, không cần đụng vào.
   //
-  // File này PHẢI được nạp SAU mod-core.js (vì cần window.MOD
+  // File này PHẢI được nạp SAU mod-core.js (vì cần MOD
   // đã tồn tại để gán BUTTON_GROUPS vào).
   //
   // Cấu trúc:
@@ -75,6 +75,7 @@
     );
     return;
   }
+  const MOD = window.MOD;
   const updateGroup = {
     title: "Cập nhật",
     icon: "fa-cloud-download-alt",
@@ -111,7 +112,7 @@
 
     fn: async (MOD) => {
       for (const name of MOD.files) {
-        MOD.updateFile(name);
+        await MOD.updateFile(name);
       }
       console.log("[MOD LOAD] Đã load tất cả file");
       return true;
@@ -127,7 +128,7 @@
       location.reload();
     },
   });
-  window.MOD.BUTTON_GROUPS = [
+  MOD.BUTTON_GROUPS = [
     {
       title: "Auto",
       icon: "fa-toggle-on",
@@ -177,6 +178,16 @@
           },
         },
         {
+          id: "mod-dowload-raw",
+          type: "toggle",
+          label: "Download Raw",
+          defaultValue: false,
+
+          fn: (MOD, checked) => {
+            MOD.isRaw = checked;
+          },
+        },
+        {
           id: "mod-add-dowload",
           type: "toggle",
           label: "Add dowload",
@@ -223,62 +234,13 @@
               btn.textContent = "Download";
               btn.className = "mod-download-btn";
 
-              btn.style.cssText = ` 
-        margin-left: 8px; 
-        padding: 5px 10px; 
-        border: 0; 
-        border-radius: 5px; 
-        background: #2196f3; 
-        color: white; 
-        font-size: 12px; 
-        cursor: pointer; 
-      `;
-
               btn.addEventListener("click", async function (e) {
                 e.preventDefault();
                 e.stopPropagation();
-
                 try {
-                  console.log("===== DOWNLOAD INFO =====");
-                  console.log("Book:", data);
-                  console.log("id:", data && data.id);
-                  console.log("host:", data && data.host);
-                  console.log("name:", data && data.tname);
-                  console.log("===== DOWNLOAD =====");
-
-                  const root = `epub_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
-
-                  const epub = new EpubDowload(
-                    root,
-                    (data.tname || data.name || "book") + ".epub",
-                  );
-
-                  await epub.init();
-
-                  const chapterList = await getChapterListCache(
-                    data.host,
-                    data.id,
-                  );
-
-                  console.log("[MOD] chapterList:", chapterList);
-
-                  const builder = new EpubBuilder();
-
-                  const b = await builder.createBaseFiles(data, chapterList);
-
-                  console.log("[MOD] Base files:", b);
-
-                  for (const x of b) {
-                    console.log("[MOD] Save:", x.path);
-
-                    await epub.saveFile(x);
-                  }
-
-                  const result = await epub.finish();
-
-                  console.log("[MOD] EPUB hoàn tất:", result);
+                  await MOD.fun.downloadEPUB(data);
                 } catch (error) {
-                  console.error("[MOD] Download EPUB lỗi:", error);
+                  console.error("[MOD] Download lỗi:", error);
                 }
               });
 
@@ -457,12 +419,12 @@
               (original || console.log)("[MOD] Hủy MOD hoàn tất");
 
               // =================================================
-              // 5. XÓA window.MOD SAU CÙNG
+              // 5. XÓA MOD SAU CÙNG
               // =================================================
               setTimeout(function () {
-                delete window.MOD;
+                delete MOD;
 
-                (original || console.log)("[MOD] window.MOD đã được xóa");
+                (original || console.log)("[MOD] MOD đã được xóa");
               }, 100);
             } catch (error) {
               console.error("[MOD] Lỗi khi hủy MOD:", error);
@@ -549,6 +511,119 @@
     //
     // -----------------------------------------------------
   ];
+  MOD.fun = MOD.fun || {};
+  MOD.fun.downloadEPUB = async function (data) {
+    try {
+      console.log("===== DOWNLOAD INFO =====");
+      console.log("Book:", data);
+      console.log("id:", data && data.id);
+      console.log("host:", data && data.host);
+      console.log("name:", data && data.tname);
+      console.log("===== DOWNLOAD =====");
 
-  window.MOD.renderGroup();
+      const root = `epub_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+
+      const epub = new EpubDowload(
+        root,
+        (data.tname || data.name || "book") + ".epub",
+      );
+
+      await epub.init();
+
+      const chapterList = await getChapterListCache(data.host, data.id);
+
+      console.log("[MOD] chapterList:", chapterList);
+      if (!Array.isArray(chapterList)) {
+        throw new Error("chapterList không phải Array");
+      }
+      const builder = new EpubBuilder();
+
+      const b = await builder.createBaseFiles(data, chapterList);
+
+      console.log("[MOD] Base files:", b);
+
+      for (const x of b) {
+        console.log("[MOD] Save:", x.path);
+
+        await epub.saveFile(x);
+      }
+      for (let index = 0; index < chapterList.length; index++) {
+        try {
+          const c = chapterList[index];
+
+          console.log(
+            `[MOD] Chapter ${index + 1}/${chapterList.length}:`,
+            c.title,
+          );
+
+          // Key cache chapter
+          const key = data.chapterPreKey + c.cid;
+
+          console.log("[MOD] Chapter key:", key);
+
+          // Lấy nội dung chapter
+          const content = await MOD.fun.GetContent(key);
+
+          if (!content) {
+            content = "Không có dữ liệu";
+          }
+
+          // Tạo file chapter
+          const x = await builder.createChapter(c, content);
+
+          console.log("[MOD] Save chapter:", x.path);
+
+          await epub.saveFile(x);
+        } catch (error) {
+          console.error(`[MOD] Lỗi chapter ${index}:`, error);
+        }
+      }
+
+      const result = await epub.finish();
+
+      console.log("[MOD] EPUB hoàn tất:", result);
+    } catch (error) {
+      console.error("[MOD] Download EPUB lỗi:", error);
+    }
+  };
+  MOD.fun.GetContent = async function (key) {
+    try {
+      const chapter = await app.storage.cache.getFile(key);
+
+      if (!chapter) {
+        return "Không có dữ liệu";
+      }
+
+      let json;
+
+      try {
+        json = JSON.parse(chapter);
+      } catch (e) {
+        console.error("[MOD] JSON.parse lỗi:", e);
+        return "Dữ liệu không hợp lệ";
+      }
+
+      if (!json || !json.data) {
+        return "Không có dữ liệu";
+      }
+
+      let html = json.data;
+      html = html.replace(/<p[^>]*>.*?@Bạn.*?<\/p>/is, "");
+      if (MOD.isRaw) {
+        const regex = /<i[^>]*?t=['"]([^'"]*)['"][^>]*?>(.*?)<\/i>/gis;
+
+        const raw = html.replace(regex, "$1").replace(/ /g, "");
+
+        return raw.trim();
+      }
+
+      html = html.replace(/<i\b[^>]*>(.*?)<\/i>/gis, "<i>$1</i>");
+
+      return html.trim();
+    } catch (error) {
+      console.error("[MOD] GetContent lỗi:", error);
+      return "Lỗi đọc dữ liệu";
+    }
+  };
+  MOD.renderGroup();
 })();
