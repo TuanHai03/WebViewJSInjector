@@ -187,27 +187,74 @@
       `;
 
               btn.addEventListener("click", async function (e) {
-                e.preventDefault();
-                e.stopPropagation();
-                console.log("===== DOWNLOAD INFO =====");
-                console.log("Book:", data);
-                console.log("id:", data && data.id);
-                console.log("host:", data && data.host);
-                console.log("name:", data && data.tname);
-                console.log("===== DOWNLOAD =====");
-                const root = `epub_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
-                const epub = new EpubDowload(root, data.tname + ".epub");
-                await epub.init();
-                const chapterList = await getChapterListCache(
-                  data.host,
-                  data.id,
-                );
-                const builder = new EpubBuilder();
-                const b = await builder.createBaseFiles(data, chapterList);
-                for (const x of b) {
-                  await epub.saveFile(x);
-                }
-              });
+  e.preventDefault();
+  e.stopPropagation();
+
+  try {
+    console.log("===== DOWNLOAD INFO =====");
+    console.log("Book:", data);
+    console.log("id:", data && data.id);
+    console.log("host:", data && data.host);
+    console.log("name:", data && data.tname);
+    console.log("===== DOWNLOAD =====");
+
+    const root =
+      `epub_${Date.now()}_${Math.floor(Math.random() * 10000)}`;
+
+    const epub =
+      new EpubDowload(
+        root,
+        (data.tname || data.name || "book") + ".epub"
+      );
+
+    await epub.init();
+
+    const chapterList =
+      await getChapterListCache(
+        data.host,
+        data.id
+      );
+
+    console.log("[MOD] chapterList:", chapterList);
+
+    const builder =
+      new EpubBuilder();
+
+    const b =
+      await builder.createBaseFiles(
+        data,
+        chapterList
+      );
+
+    console.log(
+      "[MOD] Base files:",
+      b
+    );
+
+    for (const x of b) {
+      console.log(
+        "[MOD] Save:",
+        x.path
+      );
+
+      await epub.saveFile(x);
+    }
+
+    const result =
+      await epub.finish();
+
+    console.log(
+      "[MOD] EPUB hoàn tất:",
+      result
+    );
+
+  } catch (error) {
+    console.error(
+      "[MOD] Download EPUB lỗi:",
+      error
+    );
+  }
+});
 
               const tags = row.querySelector(".tags");
 
