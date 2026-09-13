@@ -663,16 +663,21 @@
 
       content.appendChild(card);
     });
-    const modstatus = `<div class="mod-card">
-                        <div class="mod-card-title">
-                            <i class="fas fa-info-circle"></i>
-                            Status
-                        </div>
+    const modstatus = document.createElement("div");
 
-                        <div class="mod-status" id="mod-status">
-                            MOD sẵn sàng
-                        </div>
-                    </div>`;
+    modstatus.className = "mod-card";
+
+    modstatus.innerHTML = `
+    <div class="mod-card-title">
+        <i class="fas fa-info-circle"></i>
+        Status
+    </div>
+
+    <div class="mod-status" id="mod-status">
+        MOD sẵn sàng
+    </div>
+`;
+
     content.appendChild(modstatus);
     // =====================================================
     // BIND EVENT SAU KHI RENDER
