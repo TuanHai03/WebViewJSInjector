@@ -46,11 +46,22 @@
 
       const FS = Capacitor.Plugins.Filesystem;
 
-      await FS.mkdir({
-        path: this.root,
-        directory: "DATA",
-        recursive: true,
-      });
+      try {
+        await FS.mkdir({
+          path: this.root,
+          directory: "DATA",
+          recursive: true,
+        });
+      } catch (error) {
+        const message =
+          error && error.message ? String(error.message) : String(error);
+
+        if (message.toLowerCase().indexOf("directory exists") < 0) {
+          throw error;
+        }
+
+        console.log("[EPUB] Root đã tồn tại:", this.root);
+      }
 
       this.inited = true;
 
@@ -305,27 +316,48 @@
     // =========================================================
 
     static async ensureDir(FS, root, filePath) {
-      const parts = String(filePath).split("/");
+      const relativePath = String(filePath).replace(/^\/+/, "");
+
+      const parts = relativePath.split("/");
 
       // Bỏ tên file
       parts.pop();
 
-      // File nằm trực tiếp trong root
-      //
-      // ví dụ:
-      // mimetype
-      //
       if (parts.length === 0) {
         return;
       }
 
-      const dirPath = `${root}/${parts.join("/")}`;
+      // Tạo từng thư mục, bỏ qua lỗi Directory exists
+      let currentPath = root;
 
-      await FS.mkdir({
-        path: dirPath,
-        directory: "DATA",
-        recursive: true,
-      });
+      for (const part of parts) {
+        if (!part) {
+          continue;
+        }
+
+        currentPath += "/" + part;
+
+        try {
+          await FS.mkdir({
+            path: currentPath,
+            directory: "DATA",
+            recursive: true,
+          });
+
+          console.log("[EPUB] Tạo thư mục:", currentPath);
+        } catch (error) {
+          const message =
+            error && error.message ? String(error.message) : String(error);
+
+          if (message.toLowerCase().indexOf("directory exists") >= 0) {
+            console.log("[EPUB] Thư mục đã tồn tại:", currentPath);
+
+            continue;
+          }
+
+          throw error;
+        }
+      }
     }
 
     // =========================================================
