@@ -470,12 +470,14 @@
     document.body.appendChild(tab);
 
     MOD.tab = tab;
-    // CLICK MOD (mở tab)
+    MOD.navItem.removeEventListener("click", MOD._loadClickHandler, true);
+
     MOD.navItem.addEventListener(
       "click",
       (event) => {
         event.preventDefault();
         event.stopPropagation();
+
         MOD.open();
       },
       true,
