@@ -8,20 +8,22 @@
   // Ví dụ:  new EpubDowload( "Epub123", "book.epub"  ); 
   // DATA sẽ là: /data/user/0/com.sangtacviet.mobilereader/files/tempEpub/Epub123
   // // =========================================================
-    constructor(root, fileName) {
-      if (!root) {
-        throw new Error("root is required");
-      }
-
-      if (!fileName) {
-        throw new Error("fileName is required");
-      }
-        this.root =String(root).replace(/^\/+|\/+$/g, "");
-        this.fileName =String(fileName).replace(/^\/+|\/+$/g, "");
-        this.fileName=toValidFileName(fileName);  
-        this.root = "TempEpub/"+root;
-        this.inited = false;
-        this.finished = false;
+    constructor(tempName, outputFileName) 
+    { 
+        if (!tempName) { throw new Error("tempName is required"); } 
+        if (!outputFileName) { throw new Error("outputFileName is required"); } 
+        // ------------------------------------------------------- 
+        // Làm sạch tên thư mục // ------------------------------------------------------- 
+        this.tempName = String(tempName) .replace(/^\/+|\/+$/g, ""); 
+        // ------------------------------------------------------- 
+        // Làm sạch tên file 
+        // ------------------------------------------------------- 
+        this.fileName = EpubDowload.toValidFileName( outputFileName ); 
+        // ------------------------------------------------------- 
+        // Root thực tế 
+        // ------------------------------------------------------- 
+        this.root = `TempEpub/${this.tempName}`; 
+        this.inited = false; this.finished = false; 
     }
 
     // =========================================================
