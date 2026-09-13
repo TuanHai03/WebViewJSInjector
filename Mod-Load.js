@@ -1,5 +1,6 @@
 (() => {
   "use strict";
+  app.debug={}
   if (window.MOD) {
     console.log("[MOD] Injector đã chạy → bỏ qua");
     return;
