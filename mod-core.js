@@ -821,8 +821,8 @@
 
             if (toggleIcon) {
               toggleIcon.className = checked
-                ? "fas fa-toggle-on mod-toggle-icon"
-                : "fas fa-toggle-off mod-toggle-icon";
+                ? "fas fa-toggle-off mod-toggle-icon"
+                : "fas fa-toggle-on mod-toggle-icon";
             }
 
             // ==========================================
