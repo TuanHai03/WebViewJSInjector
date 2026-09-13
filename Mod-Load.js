@@ -1,6 +1,5 @@
 (() => {
   "use strict";
-  if (window.MOD) { console.log("[MOD] Injector đã chạy → bỏ qua"); return; }
   const GITHUB_USER = "TuanHai03";
   const GITHUB_REPO = "WebViewJSInjector";
   const GITHUB_BRANCH = "main";
@@ -15,6 +14,14 @@
   ];
   const MOD = {
     navId: "mod-navbar-item",
+    async _loadClickHandler(event) {
+      event.preventDefault();
+      event.stopPropagation();
+
+      console.log("[MOD BUTTON] Click → loadJS");
+
+      await MOD.loadJS();
+    },
     createbtnMod() {
       const navbar = document.getElementById("mainnavbar");
       // ============================================================
@@ -43,11 +50,7 @@
       }
       item.classList.remove("active");
       // TẠM THỜI: click MOD -> loadJS
-      item.addEventListener("click", async () => {
-        console.log("[MOD BUTTON] Click MOD");
-
-        await this.loadJS();
-      });
+      item.addEventListener("click", this._loadClickHandler, true);
       item.innerHTML = `
             <i class="fas fa-tools"></i>
             <text>MOD</text>
