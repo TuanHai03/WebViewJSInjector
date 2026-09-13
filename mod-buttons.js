@@ -588,7 +588,7 @@
   };
   MOD.fun.GetContent = async function (key) {
     try {
-      const chapter = await getFile("(key);
+      const chapter = await getFile(key);
 
       if (!chapter) {
         return "Không có dữ liệu";
