@@ -4,19 +4,23 @@
     console.log("[MOD] Injector đã chạy → bỏ qua");
     return;
   }
-  const GITHUB_USER = "TuanHai03";
-  const GITHUB_REPO = "WebViewJSInjector";
-  const GITHUB_BRANCH = "main";
 
-  const BASE_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/`;
-
-  const FILES = [
-    "mod-core.js",
-    "EpubBuilder.js",
-    "EpubDowload.js",
-    "mod-buttons.js",
-  ];
   const MOD = {
+    GITHUB_USER: "TuanHai03",
+
+    GITHUB_REPO: "WebViewJSInjector",
+
+    GITHUB_BRANCH: "main",
+
+    get BASE_URL() {
+      return `https://raw.githubusercontent.com/${this.GITHUB_USER}/${this.GITHUB_REPO}/${this.GITHUB_BRANCH}/`;
+    },
+    files: [
+      "mod-core.js",
+      "EpubBuilder.js",
+      "EpubDowload.js",
+      "mod-buttons.js",
+    ],
     navId: "mod-navbar-item",
     async _loadClickHandler(event) {
       event.preventDefault();
@@ -242,7 +246,7 @@
           console.error("[MOD SQLITE] Không tìm thấy CapacitorSQLite");
           return null;
         }
-        const response = await fetch(BASE_URL + name);
+        const response = await fetch(this.BASE_URL + name);
 
         if (!response.ok) {
           console.error("[MOD GITHUB] Không tải được:", name, response.status);
@@ -259,7 +263,7 @@
       }
     },
     async loadJS() {
-      for (const name of FILES) {
+      for (const name of this.files) {
         // ============================================================
         // ĐỌC SQL
         // ============================================================
@@ -277,46 +281,50 @@
 
           console.error("[MOD LOAD] SQL lỗi:", name);
         }
-
         // ============================================================
         // SQL KHÔNG CÓ HOẶC INJECT LỖI
         // → FETCH GITHUB
         // ============================================================
-        js = await this.fetchGitHub(name);
-
-        if (!js) {
-          console.error("[MOD LOAD] GitHub lỗi:", name);
-          return false;
-        }
-
-        // ============================================================
-        // INJECT FILE GITHUB
-        // ============================================================
-        if (!this.injectFile(name, js)) {
-          console.error("[MOD LOAD] Inject lỗi:", name);
-          return false;
-        }
-        console.log(
-          "[MOD LOAD] Trước writeSQL:",
-          name,
-          "js null?",
-          js === null,
-          "js undefined?",
-          js === undefined,
-          "length:",
-          js ? js.length : 0,
-        );
-        // ============================================================
-        // GHI LẠI SQL
-        // ============================================================
-        if (!(await this.writeSQL(name, js))) {
-          console.error("[MOD LOAD] Ghi SQL lỗi:", name);
+        if ((await updateFile(name)) == false) {
           return false;
         }
       }
 
       console.log("[MOD LOAD] Đã load tất cả file");
       return true;
+    },
+    async updateFile(name) {
+      const js = await this.fetchGitHub(name);
+
+      if (!js) {
+        console.error("[MOD LOAD] GitHub lỗi:", name);
+        return false;
+      }
+
+      // ============================================================
+      // INJECT FILE GITHUB
+      // ============================================================
+      if (!this.injectFile(name, js)) {
+        console.error("[MOD LOAD] Inject lỗi:", name);
+        return false;
+      }
+      console.log(
+        "[MOD LOAD] Trước writeSQL:",
+        name,
+        "js null?",
+        js === null,
+        "js undefined?",
+        js === undefined,
+        "length:",
+        js ? js.length : 0,
+      );
+      // ============================================================
+      // GHI LẠI SQL
+      // ============================================================
+      if (!(await this.writeSQL(name, js))) {
+        console.error("[MOD LOAD] Ghi SQL lỗi:", name);
+        return false;
+      }
     },
     async init() {
       this.checkOnline();
