@@ -180,6 +180,9 @@
           ? `        <dc:description>${this.escapeXml(book.info)}</dc:description>\n`
           : "";
         const uuid = this.uuid();
+        if(CoverSource==null){
+            CoverSource=book&&book.thumb?book.thumb:null;
+        }
         const cover = await this.createCover(CoverSource);
         let links = "";
         let chapterItems="";
