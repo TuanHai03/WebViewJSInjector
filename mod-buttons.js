@@ -75,7 +75,54 @@
     );
     return;
   }
+  const updateGroup = {
+    title: "Cập nhật",
+    icon: "fa-cloud-download-alt",
+    buttons: [],
+  };
 
+  // =========================================================
+  // TỰ ADD BUTTON TỪ MOD.files
+  // =========================================================
+  for (let i = 0; i < MOD.files.length; i++) {
+    const name = MOD.files[i];
+
+    updateGroup.buttons.push({
+      id: "mod-update-" + i,
+
+      type: "button",
+
+      icon: "fa-file-code",
+
+      label: "Update " + name,
+
+      fn: async (MOD) => {
+        await MOD.updateFile(name);
+      },
+    });
+  } // =========================================================
+  // UPDATE ALL
+  // =========================================================
+  updateGroup.buttons.push({
+    id: "mod-update-all",
+    type: "button",
+    icon: "fa-sync-alt",
+    label: "Update All",
+
+    fn: async (MOD) => {
+      await MOD.updateAll();
+    },
+  });
+  updateGroup.buttons.push({
+    id: "mod-reload",
+    type: "button",
+    icon: "fa-sync-alt",
+    label: "Load lại trang",
+
+    fn: (MOD) => {
+      location.reload();
+    },
+  });
   window.MOD.BUTTON_GROUPS = [
     {
       title: "Auto",
@@ -290,6 +337,7 @@
         },
       ],
     },
+    updateGroup,
     {
       title: "JavaScript",
       icon: "fa-code",
@@ -386,8 +434,8 @@
       ],
     },
     {
-      title: "Console",
-      icon: "fa-terminal",
+      title: "WebView",
+      icon: "fa-globe",
       buttons: [
         {
           id: "mod-console-clear",
@@ -401,12 +449,6 @@
             }
           },
         },
-      ],
-    },
-    {
-      title: "WebView",
-      icon: "fa-globe",
-      buttons: [
         {
           id: "mod-url",
           icon: "fa-link",
@@ -469,5 +511,6 @@
     //
     // -----------------------------------------------------
   ];
+
   window.MOD.renderGroup();
 })();
