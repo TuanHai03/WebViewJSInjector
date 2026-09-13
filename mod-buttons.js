@@ -110,7 +110,11 @@
     label: "Update All",
 
     fn: async (MOD) => {
-      await MOD.updateAll();
+      for (const name of MOD.files) {
+        MOD.updateFile(name);
+      }
+      console.log("[MOD LOAD] Đã load tất cả file");
+      return true;
     },
   });
   updateGroup.buttons.push({
