@@ -599,34 +599,34 @@
             const optionsHtml = (btn.options || [])
               .map(
                 (option) => `
-                        <option
-                            value="${String(option.value).replace(/"/g, "&quot;")}"
-                            ${
-                              String(option.value) === String(saved)
-                                ? "selected"
-                                : ""
-                            }
-                        >
-                            ${option.label}
-                        </option>
-                    `,
+                            <option
+                                value="${String(option.value).replace(/"/g, "&quot;")}"
+                                ${
+                                  String(option.value) === String(saved)
+                                    ? "selected"
+                                    : ""
+                                }
+                            >
+                                ${option.label}
+                            </option>
+                        `,
               )
               .join("");
 
             return `
-                    <div class="mod-select">
+                        <div class="mod-select">
 
-                        <div class="mod-select-label">
-                            <i class="fas ${btn.icon || "fa-list"}"></i>
-                            ${btn.label}
+                            <div class="mod-select-label">
+                                <i class="fas ${btn.icon || "fa-list"}"></i>
+                                ${btn.label}
+                            </div>
+
+                            <select id="${btn.id}">
+                                ${optionsHtml}
+                            </select>
+
                         </div>
-
-                        <select id="${btn.id}">
-                            ${optionsHtml}
-                        </select>
-
-                    </div>
-                `;
+                    `;
           }
 
           // =================================================
@@ -663,7 +663,17 @@
 
       content.appendChild(card);
     });
+    const modstatus = `<div class="mod-card">
+                        <div class="mod-card-title">
+                            <i class="fas fa-info-circle"></i>
+                            Status
+                        </div>
 
+                        <div class="mod-status" id="mod-status">
+                            MOD sẵn sàng
+                        </div>
+                    </div>`;
+    content.appendChild(modstatus);
     // =====================================================
     // BIND EVENT SAU KHI RENDER
     // =====================================================
@@ -827,6 +837,7 @@
     const el = document.getElementById("mod-status");
 
     if (!el) {
+      console.error("Không có mod-status");
       return;
     }
 
