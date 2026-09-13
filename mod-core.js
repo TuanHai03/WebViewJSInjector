@@ -346,7 +346,7 @@
 
 
                     #${MOD.tabId} #mod-status {
-                max-height: 180px;
+                max-height: 360px;
                 overflow-y: auto;
                 padding: 8px;
                 margin-top: 8px;
