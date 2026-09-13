@@ -18,6 +18,7 @@
       }
         this.root =String(root).replace(/^\/+|\/+$/g, "");
         this.fileName =String(fileName).replace(/^\/+|\/+$/g, "");
+        this.fileName=toValidFileName(fileName);  
         this.root = "TempEpub/"+root;
         this.inited = false;
         this.finished = false;
@@ -347,6 +348,30 @@
         console.log("Root không tồn tại hoặc đã được xóa:", root);
       }
     }
+
+static toValidFileName(name, defaultName = "Book") {
+
+    let result = String(name || "").trim();
+
+    // Ký tự không hợp lệ trên Windows / Android
+    result = result.replace(/[<>:"/\\|?*\x00-\x1F]/g, "_");
+
+    // Không để kết thúc bằng dấu chấm hoặc khoảng trắng
+    result = result.replace(/[. ]+$/g, "");
+
+    // Xử lý tên rỗng
+    if (!result) {
+        result = defaultName;
+    }
+
+    // Tránh tên đặc biệt của Windows
+    if (/^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])$/i.test(result)) {
+        result = "_" + result;
+    }
+
+    return result;
+}
+
   }
 
   // ===========================================================
