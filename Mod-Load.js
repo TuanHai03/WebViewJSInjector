@@ -1,175 +1,326 @@
 (() => {
   "use strict";
-if (window.__WEBVIEW_JS_INJECTOR_LOADED__) { console.log("[MOD] Injector đã chạy → bỏ qua"); return; } window.__WEBVIEW_JS_INJECTOR_LOADED__ = true;
+  if (window.__WEBVIEW_JS_INJECTOR_LOADED__) { console.log("[MOD] Injector đã chạy → bỏ qua"); return; } window.__WEBVIEW_JS_INJECTOR_LOADED__ = true;
   const GITHUB_USER = "TuanHai03";
   const GITHUB_REPO = "WebViewJSInjector";
   const GITHUB_BRANCH = "main";
 
-  const BASE_URL =
-    `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/`;
+  const BASE_URL = `https://raw.githubusercontent.com/${GITHUB_USER}/${GITHUB_REPO}/${GITHUB_BRANCH}/`;
 
-  const FILES = ["mod-core.js","EpubBuilder.js","EpubDowload.js", "mod-buttons.js"];
+  const FILES = [
+    "mod-core.js",
+    "EpubBuilder.js",
+    "EpubDowload.js",
+    "mod-buttons.js",
+  ];
+  const MOD = {
+    navId: "mod-navbar-item",
+    createbtnMod() {
+      const navbar = document.getElementById("mainnavbar");
+      // ============================================================
+      // KIỂM TRA UI
+      // ============================================================
+      if (!navbar) {
+        console.error("[MOD BUTTON] Không tìm thấy mainnavbar");
+        this.Online = null;
+        return;
+      }
+      // ============================================================
+      // KHÔNG TẠO TRÙNG
+      // ============================================================
+      if (document.getElementById("mod-navbar-item")) {
+        console.log("[MOD BUTTON] Nút MOD đã tồn tại");
 
-  const DB_NAME = "JS";
-  const STORE_NAME = "s";
+        return;
+      }
+      const item = document.createElement("tabitem");
+      item.id = this.navId;
+      const firstItem = navbar.querySelector("tabitem");
+      if (firstItem) {
+        item.className = firstItem.className;
+      } else {
+        item.className = "iconbtn waves-effect waves-light";
+      }
+      item.classList.remove("active");
+      // TẠM THỜI: click MOD -> loadJS
+      item.addEventListener("click", async () => {
+        console.log("[MOD BUTTON] Click MOD");
 
-  // =========================================================
-  // IndexedDB
-  // =========================================================
+        await this.loadJS();
+      });
+      item.innerHTML = `
+            <i class="fas fa-tools"></i>
+            <text>MOD</text>
+        `;
 
-  function openDB() {
-    return new Promise((resolve, reject) => {
-      const req = indexedDB.open(DB_NAME, 1);
+      navbar.appendChild(item);
 
-      req.onupgradeneeded = () => {
-        const db = req.result;
+      this.navItem = item;
 
-        if (!db.objectStoreNames.contains(STORE_NAME)) {
-          db.createObjectStore(STORE_NAME);
+      console.log("[MOD BUTTON] Đã tạo nút MOD");
+    },
+    checkOnline() {
+      const path = location.pathname;
+
+      // Mặc định: không xác định
+      this.Online = null;
+
+      // index.html -> DB
+      if (path.includes("/index.html")) {
+        this.Online = false;
+      }
+
+      // app.v2.php -> GitHub
+      else if (path.includes("/app.v2.php")) {
+        this.Online = true;
+      }
+
+      console.log("[MOD ONLINE] Online =", this.Online);
+
+      return this.Online;
+    },
+    checkSQLite() {
+      const SQLite =
+        window.Capacitor?.Plugins?.CapacitorSQLite ||
+        window.Capacitor?.Plugins?.CapacitorSQLitePlugin;
+
+      if (!SQLite) {
+        console.error("[MOD SQLITE] Không tìm thấy CapacitorSQLite");
+        return false;
+      }
+
+      this.SQLite = SQLite;
+
+      console.log("[MOD SQLITE] Đã tìm thấy CapacitorSQLite");
+
+      return true;
+    },
+    async checkTable() {
+      try {
+        if (!this.SQLite) {
+          return false;
         }
-      };
+        if (this.isTable) {
+          return true;
+        }
+        await this.SQLite.execute({
+          database: "app_v2_db",
+          statements: `
+        CREATE TABLE IF NOT EXISTS mod_scripts (
+          name TEXT PRIMARY KEY,
+          content TEXT NOT NULL,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        );
+      `,
+          values: [],
+        });
+        this.isTable = true;
+        console.log("[MOD SQLITE] OK");
+        return true;
+      } catch (e) {
+        this.isTable = false;
+        console.error("[MOD SQLITE] ERROR:", e);
+        return false;
+      }
+    },
+    async readSQL(name) {
+      try {
+        if (this.isTable != true) {
+          if (!(await this.checkTable())) {
+            return null;
+          }
+        }
 
-      req.onsuccess = () => resolve(req.result);
-      req.onerror = () => reject(req.error);
-    });
-  }
+        name = String(name).replace(/'/g, "''");
 
-  function getDB(key) {
-    return openDB().then(db => {
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_NAME, "readonly");
-        const store = tx.objectStore(STORE_NAME);
-        const req = store.get(key);
+        const result = await this.query(
+          `SELECT content
+       FROM mod_scripts
+       WHERE name = '${name}';`,
+        );
 
-        req.onsuccess = () => resolve(req.result);
-        req.onerror = () => reject(req.error);
-      });
-    });
-  }
+        if (result.length === 0) {
+          return null;
+        }
 
-  function saveDB(key, value) {
-    return openDB().then(db => {
-      return new Promise((resolve, reject) => {
-        const tx = db.transaction(STORE_NAME, "readwrite");
-        const store = tx.objectStore(STORE_NAME);
+        const encoded =
+          result[0].content || (result[1] ? result[1].content : null);
 
-        store.put(value, key);
+        if (!encoded) {
+          return null;
+        }
 
-        tx.oncomplete = () => resolve();
-        tx.onerror = () => reject(tx.error);
-      });
-    });
-  }
+        // Base64 → JS
+        return decodeURIComponent(escape(atob(encoded)));
+      } catch (e) {
+        console.error("[MOD SQLITE] Read error:", name, e);
+        return null;
+      }
+    },
+    async writeSQL(name, content) {
+      try {
+        if (!name || content == null) {
+          console.error("[MOD SQLITE] Content không hợp lệ:", name);
+          return false;
+        }
 
-  // =========================================================
-  // Load JS
-  // =========================================================
+        if (this.isTable !== true) {
+          if (!(await this.checkTable())) {
+            return false;
+          }
+        }
+        // JS → Base64
+        const encoded = btoa(unescape(encodeURIComponent(String(content))));
 
-  function runScript(code, name) {
-    if (!code) {
-      throw new Error(`Không có code: ${name}`);
-    }
+        name = String(name).replace(/'/g, "''");
 
-    // Chạy ở global scope
-    (0, eval)(code);
+        // UPDATE
+        if (
+          (await this.noQuery(
+            `UPDATE mod_scripts
+         SET content = '${encoded}',
+             updated_at = CURRENT_TIMESTAMP
+         WHERE name = '${name}';`,
+          )) == 0
+        ) {
+          // INSERT
+          await this.noQuery(
+            `INSERT OR IGNORE INTO mod_scripts
+         (name, content)
+         VALUES ('${name}', '${encoded}');`,
+          );
+        }
 
-    console.log(`[MOD] Đã load ${name}`);
-  }
+        console.log("[MOD SQLITE] Đã ghi:", name, "Base64:", encoded.length);
 
-  // =========================================================
-  // Load từ IndexedDB
-  // =========================================================
+        return true;
+      } catch (e) {
+        console.error("[MOD SQLITE] Write error:", name, e);
+        return false;
+      }
+    },
+    query(query) {
+      return this.SQLite.query({
+        database: "app_v2_db",
+        statement: query,
+        values: [],
+      }).then((result) => result.values);
+    },
+    noQuery(query) {
+      return this.SQLite.execute({
+        database: "app_v2_db",
+        statements: query,
+        values: [],
+      }).then((result) => result.changes.changes);
+    },
+    injectFile(name, content) {
+      try {
+        eval(content);
 
-  async function loadFromDB() {
+        console.log("[MOD] Đã chạy:", name);
+        return true;
+      } catch (e) {
+        console.error("[MOD] Lỗi:", name, e);
+        return false;
+      }
+    },
+    async fetchGitHub(name) {
+      try {
+        // Không online thì không gọi GitHub
+        if (this.Online !== true) {
+          console.log("[MOD GITHUB] Không Online, bỏ qua:", name);
+          return null;
+        }
+        if (!this.SQLite) {
+          console.error("[MOD SQLITE] Không tìm thấy CapacitorSQLite");
+          return null;
+        }
+        const response = await fetch(BASE_URL + name);
 
-    console.log("[MOD] /index.html -> load từ IndexedDB");
+        if (!response.ok) {
+          console.error("[MOD GITHUB] Không tải được:", name, response.status);
+          return null;
+        }
 
-    for (const file of FILES) {
+        const content = await response.text();
 
-      const code = await getDB(file);
+        console.log("[MOD GITHUB] Đã tải:", name);
+        return content;
+      } catch (e) {
+        console.error("[MOD GITHUB] Lỗi:", name, e);
+        return null;
+      }
+    },
+    async loadJS() {
+      for (const name of FILES) {
+        // ============================================================
+        // ĐỌC SQL
+        // ============================================================
+        let js = await this.readSQL(name);
 
-      if (!code) {
-        console.error(`[MOD] Không tìm thấy ${file} trong IndexedDB`);
-        continue;
+        // ============================================================
+        // SQL CÓ FILE
+        // ============================================================
+        if (js) {
+          console.log("[MOD LOAD] SQL:", name);
+
+          if (this.injectFile(name, js)) {
+            continue;
+          }
+
+          console.error("[MOD LOAD] SQL lỗi:", name);
+        }
+
+        // ============================================================
+        // SQL KHÔNG CÓ HOẶC INJECT LỖI
+        // → FETCH GITHUB
+        // ============================================================
+        js = await this.fetchGitHub(name);
+
+        if (!js) {
+          console.error("[MOD LOAD] GitHub lỗi:", name);
+          return false;
+        }
+
+        // ============================================================
+        // INJECT FILE GITHUB
+        // ============================================================
+        if (!this.injectFile(name, js)) {
+          console.error("[MOD LOAD] Inject lỗi:", name);
+          return false;
+        }
+        console.log(
+          "[MOD LOAD] Trước writeSQL:",
+          name,
+          "js null?",
+          js === null,
+          "js undefined?",
+          js === undefined,
+          "length:",
+          js ? js.length : 0,
+        );
+        // ============================================================
+        // GHI LẠI SQL
+        // ============================================================
+        if (!(await this.writeSQL(name, js))) {
+          console.error("[MOD LOAD] Ghi SQL lỗi:", name);
+          return false;
+        }
       }
 
-      runScript(code, file);
-    }
+      console.log("[MOD LOAD] Đã load tất cả file");
+      return true;
+    },
+    async init() {
+      this.checkOnline();
+      this.createbtnMod();
 
-    if (window.MOD && typeof window.MOD.init === "function") {
-      window.MOD.init();
-    } else {
-      console.error("[MOD] window.MOD không tồn tại");
-    }
-  }
-
-  // =========================================================
-  // Fetch GitHub + lưu IndexedDB
-  // =========================================================
-
-  async function fetchFromGitHub() {
-
-    console.log("[MOD] /app.v2.php -> fetch GitHub");
-
-    for (const file of FILES) {
-
-      const url = `${BASE_URL}${file}?t=${Date.now()}`;
-
-      const res = await fetch(url, {
-        cache: "no-store"
-      });
-
-      if (!res.ok) {
-        throw new Error(`HTTP ${res.status}: ${url}`);
+      if (!this.checkSQLite()) {
+        return false;
       }
-
-      const code = await res.text();
-
-      // Lưu code mới vào IndexedDB
-      await saveDB(file, code);
-
-      console.log(`[MOD] Đã cập nhật DB: ${file}`);
-
-      // Load ngay code vừa fetch
-      runScript(code, file);
-    }
-
-    if (window.MOD && typeof window.MOD.init === "function") {
-      window.MOD.init();
-    } else {
-      console.error("[MOD] window.MOD không tồn tại");
-    }
-  }
-
-  // =========================================================
-  // Xác định URL hiện tại
-  // =========================================================
-
-  const path = location.pathname;
-
-  console.log("[MOD] Current path:", path);
-
-  // index.html -> DB
-  if (path.includes("/index.html")) {
-
-    loadFromDB().catch(error => {
-      console.error("[MOD] Lỗi load IndexedDB:", error);
-    });
-
-  }
-
-  // app.v2.php -> GitHub
-  else if (path.includes("/app.v2.php")) {
-
-    fetchFromGitHub().catch(error => {
-      console.error("[MOD] Lỗi fetch GitHub:", error);
-
-      // Nếu fetch lỗi -> dùng bản cache trong DB
-      loadFromDB().catch(dbError => {
-        console.error("[MOD] Không thể load cache:", dbError);
-      });
-    });
-
-  }
-
+      return await this.loadJS();
+    },
+  };
+  window.MOD = MOD;
+  MOD.init();
 })();
