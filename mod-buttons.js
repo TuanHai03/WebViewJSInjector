@@ -422,7 +422,7 @@
               // 5. XÓA MOD SAU CÙNG
               // =================================================
               setTimeout(function () {
-                delete MOD;
+                delete window.MOD;
 
                 (original || console.log)("[MOD] MOD đã được xóa");
               }, 100);
