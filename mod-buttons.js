@@ -562,7 +562,7 @@
           console.log("[MOD] Chapter key:", key);
 
           // Lấy nội dung chapter
-          const content = await MOD.fun.GetContent(key);
+          let content = await MOD.fun.GetContent(key);
 
           if (!content) {
             content = "Không có dữ liệu";
