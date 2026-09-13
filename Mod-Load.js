@@ -1,6 +1,6 @@
 (() => {
   "use strict";
-  if (window.__WEBVIEW_JS_INJECTOR_LOADED__) { console.log("[MOD] Injector đã chạy → bỏ qua"); return; } window.__WEBVIEW_JS_INJECTOR_LOADED__ = true;
+  if (window.MOD) { console.log("[MOD] Injector đã chạy → bỏ qua"); return; }
   const GITHUB_USER = "TuanHai03";
   const GITHUB_REPO = "WebViewJSInjector";
   const GITHUB_BRANCH = "main";
