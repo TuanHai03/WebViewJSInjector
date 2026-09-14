@@ -326,7 +326,7 @@
                   this,
                   arguments,
                 );
-                const row = container.querySelector(".bookrow");
+                const row = bookrowcont.querySelector(".bookrow");
                 // Thêm nút cho row mới
                 addDownloadButton(row, data);
 
