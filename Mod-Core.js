@@ -201,6 +201,29 @@
     document.body.appendChild(tab);
 
     MOD.tab = tab;
+    const content = tab.querySelector(".mod-content");
+    if (content && !content.dataset.collapseBound) {
+      content.addEventListener("click", (e) => {
+        const title = e.target.closest(".mod-collapse");
+        if (!title || !content.contains(title)) return;
+
+        const card = title.closest(".mod-card");
+        if (!card) return;
+
+        const body = card.querySelector(".mod-card-content");
+        const icon = title.querySelector(".mod-collapse-icon");
+
+        if (!body || !icon) return;
+
+        const hidden = body.style.display === "none";
+
+        body.style.display = hidden ? "" : "none";
+
+        icon.classList.toggle("fa-chevron-up", hidden);
+        icon.classList.toggle("fa-chevron-down", !hidden);
+      });
+    }
+    content.dataset.collapseBound = "true";
     MOD.navItem.removeEventListener("click", MOD._loadClickHandler, true);
 
     MOD.navItem.addEventListener(
@@ -404,35 +427,17 @@
       modstatus.className = "mod-card";
 
       modstatus.innerHTML = `
-    <div class="mod-card-title">
-        <i class="fas fa-info-circle"></i>
-        Status
-    </div>
+                            <div class="mod-card-title">
+                                <i class="fas fa-info-circle"></i>
+                                Status
+                            </div>
 
-    <div class="mod-status" id="mod-status">
-        MOD sẵn sàng
-    </div>
-`;
+                            <div class="mod-status" id="mod-status">
+                                MOD sẵn sàng
+                            </div>
+                        `;
 
       content.appendChild(modstatus);
-      content.querySelectorAll(".mod-collapse").forEach((title) => {
-        title.addEventListener("click", function () {
-          const card = this.closest(".mod-card");
-          const body = card.querySelector(".mod-card-content");
-          const icon = this.querySelector(".mod-collapse-icon");
-
-          if (!body || !icon) return;
-
-          const hidden = body.style.display === "none";
-
-          // Đổi trạng thái
-          body.style.display = hidden ? "" : "none";
-
-          // Mũi tên chỉ hướng hành động
-          icon.classList.toggle("fa-chevron-up", hidden);
-          icon.classList.toggle("fa-chevron-down", !hidden);
-        });
-      });
     } catch (error) {
       console.error(
         "[MOD] Lỗi render nút chức năng:",
