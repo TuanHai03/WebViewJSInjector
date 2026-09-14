@@ -603,10 +603,7 @@
       const builder = new EpubBuilder();
 
       const b = await builder.createBaseFiles(data, chapterList);
-
       for (const x of b) {
-        console.log("[MOD] Save:", x.path);
-
         await epub.saveFile(x);
       }
       for (let index = 0; index < chapterList.length; index++) {
