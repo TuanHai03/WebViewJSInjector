@@ -634,9 +634,13 @@
 
       const result = await epub.finish();
 
-      MOD.showToast("[MOD] EPUB hoàn tất:", result);
+      MOD.showToast(
+        "[MOD] Đã hoàn tất EPUB: " +
+          (data.tname || data.name || "book") +
+          ".epub",
+      );
     } catch (error) {
-      MOD.showToast("[MOD] Download EPUB lỗi:", error);
+      MOD.showToast("[MOD] Download EPUB lỗi: " + error);
     } finally {
       MOD.isDowload = false;
     }
