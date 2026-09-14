@@ -260,7 +260,7 @@
           console.error("[MOD SQLITE] Không tìm thấy CapacitorSQLite");
           return null;
         }
-        const response = await fetch(this.BASE_URL + name);
+        const response = await fetch(this.BASE_URL + name + "?t=" + Date.now());
 
         if (!response.ok) {
           console.error("[MOD GITHUB] Không tải được:", name, response.status);
