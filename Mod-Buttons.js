@@ -291,7 +291,66 @@
 
               const btn = document.createElement("button");
 
-              btn.textContent = "Download";
+              btn.innerHTML = `
+                    <svg
+                        class="mod-epub-icon"
+                        viewBox="0 0 32 32"
+                        xmlns="http://www.w3.org/2000/svg"
+                        aria-hidden="true"
+                    ><path
+                            d="M6 2.5H19L26 9.5V29.5H6Z"
+                            fill="white"
+                            stroke="currentColor"
+                            stroke-width="1.3"
+                        />
+                        <path
+                            d="M6 2.5H19L26 9.5V22"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+                        <path
+                            d="M6 2.5V29.5H20"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+                        <path
+                            d="M19 2.5V9.5H26"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2"
+                            stroke-linejoin="round"
+                        />
+                        <text
+                            x="8"
+                            y="18"
+                            font-family="Arial, sans-serif"
+                            font-size="5.5"
+                            font-weight="700"
+                            fill="currentColor"
+                        >EPUB</text>
+                        <path
+                            d="M15 24H28"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2.2"
+                            stroke-linecap="round"
+                        />
+                        <path
+                            d="M23 19L28 24L23 29"
+                            fill="none"
+                            stroke="currentColor"
+                            stroke-width="2.2"
+                            stroke-linecap="round"
+                            stroke-linejoin="round"
+                        />
+                    </svg>
+                `;
               btn.className = "mod-download-btn";
 
               btn.addEventListener("click", async function (e) {
@@ -303,12 +362,7 @@
                   console.error("[MOD] Download lỗi:", error);
                 }
               });
-
-              const tags = row.querySelector(".tags");
-
-              if (tags) {
-                tags.appendChild(btn);
-              }
+              row.appendChild(btn);
             }
 
             // =====================================================
