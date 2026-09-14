@@ -215,7 +215,7 @@
           );
         }
 
-        console.log("[MOD SQLITE] Đã ghi:", name, "Base64:", encoded.length);
+        this.showToast("[MOD SQLITE] Đã ghi:", name, "Base64:", encoded.length);
 
         return true;
       } catch (e) {
