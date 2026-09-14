@@ -1,8 +1,11 @@
-const MODStyle = (() => {
-    const STYLE_ID = "mod-style";
-
+(() => {
+  "use strict";
+  const MOD = window.MOD;
+  MOD.tabId = "mod-tab";
+  MOD.styleId = "mod-style";
+  MOD.Style = (() => {
     function getCSS() {
-        return `
+      return `
             #${MOD.tabId} {
                 width: 100%;
                 height: 100%;
@@ -323,37 +326,39 @@ const MODStyle = (() => {
     }
 
     function apply() {
-        // Xóa style cũ
-        const oldStyle = document.getElementById(STYLE_ID);
+      // Xóa style cũ
+      const oldStyle = document.getElementById(MOD.styleId);
 
-        if (oldStyle) {
-            oldStyle.remove();
-        }
+      if (oldStyle) {
+        oldStyle.remove();
+      }
 
-        // Tạo style mới
-        const style = document.createElement("style");
+      // Tạo style mới
+      const style = document.createElement("style");
 
-        style.id = STYLE_ID;
-        style.textContent = getCSS();
+      style.id = MOD.styleId;
+      style.textContent = getCSS();
 
-        document.head.appendChild(style);
+      document.head.appendChild(style);
 
-        console.log("[MODStyle] Style applied");
+      console.log("[MODStyle] Style applied");
     }
 
     function remove() {
-        const style = document.getElementById(STYLE_ID);
+      const style = document.getElementById(MOD.styleId);
 
-        if (style) {
-            style.remove();
-        }
+      if (style) {
+        style.remove();
+      }
 
-        console.log("[MODStyle] Style removed");
+      console.log("[MODStyle] Style removed");
     }
 
     return {
-        apply,
-        remove,
-        getCSS
+      apply,
+      remove,
+      getCSS,
     };
+  })();
+  MOD.Style.apply();
 })();
