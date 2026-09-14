@@ -60,21 +60,38 @@
       }
 
       if (this._dirLocks.has(path)) {
-        await this._dirLocks.get(path); // đang có lệnh mkdir khác chạy -> đợi chung
-        return;
+        try {
+          await this._dirLocks.get(path);
+
+          return;
+        } catch (error) {
+          console.error("[EPUB][MKDIR] Error:", error);
+
+          throw error;
+        }
       }
 
       const mkdirPromise = (async () => {
         try {
-          await FS.mkdir({ path, directory: "DATA", recursive: true });
-          console.log("[EPUB] Tạo thư mục:", path);
+          await FS.mkdir({
+            path: path,
+            directory: "DATA",
+            recursive: true,
+          });
         } catch (error) {
+          console.error("[EPUB][MKDIR] Error object:", error);
+
           const message = (
-            error && error.message ? String(error.message) : String(error)
+            error?.message ? String(error.message) : String(error)
           ).toLowerCase();
-          if (message.indexOf("exist") < 0) {
-            throw error;
+
+          if (message.includes("exist") || message.includes("already")) {
+            return;
           }
+
+          console.error("[EPUB][MKDIR] REAL ERROR:", path);
+
+          throw error;
         }
       })();
 
@@ -82,7 +99,12 @@
 
       try {
         await mkdirPromise;
+
         this._createdDirs.add(path);
+      } catch (error) {
+        console.error("[EPUB][MKDIR] Error:", error);
+
+        throw error;
       } finally {
         this._dirLocks.delete(path);
       }
@@ -100,17 +122,20 @@
     // root/OEBPS/Text
     //
     // =========================================================
-    async ensureDir(filePath) {
-      const FS = Capacitor.Plugins.Filesystem;
-      const relativePath = String(filePath).replace(/^\/+/, "");
-      const parts = relativePath.split("/");
-      parts.pop(); // bỏ tên file
+    async ensureDir(FS, root, filePath) {
+      try {
+        const relativePath = String(filePath).replace(/^\/+/, "");
+        const parts = relativePath.split("/");
+        parts.pop(); // bỏ tên file
+        for (const part of parts) {
+          if (!part) continue;
+          root += "/" + part;
+          await this._mkdirOnce(FS, root);
+        }
+      } catch (error) {
+        console.error("[EPUB][ENSURE DIR] Error:", error);
 
-      let currentPath = this.root;
-      for (const part of parts) {
-        if (!part) continue;
-        currentPath += "/" + part;
-        await this._mkdirOnce(FS, currentPath);
+        throw error;
       }
     }
 
@@ -131,55 +156,55 @@
     // =========================================================
 
     async saveFile(file) {
-      if (!this.inited) {
-        throw new Error("Phải gọi init() trước khi saveFile()");
+      try {
+        if (!this.inited) {
+          throw new Error("Phải gọi init() trước khi saveFile()");
+        }
+
+        if (this.finished) {
+          throw new Error("EPUB đã finish(), không thể saveFile()");
+        }
+
+        if (!file || typeof file !== "object") {
+          throw new Error("File không hợp lệ");
+        }
+
+        if (!file.path) {
+          throw new Error("File phải có path");
+        }
+
+        if (typeof file.data === "undefined" || file.data === null) {
+          throw new Error(`File không có data: ${file.path}`);
+        }
+
+        const FS = Capacitor.Plugins.Filesystem;
+
+        // -------------------------------------------------------
+        // Tạo thư mục cha
+        // -------------------------------------------------------
+
+        await this.ensureDir(FS, this.root, file.path);
+        // -------------------------------------------------------
+        // Convert data -> Base64
+        // -------------------------------------------------------
+
+        const base64Data = await EpubDowload.dataToBase64(file.data);
+        // -------------------------------------------------------
+        // Ghi file
+        // -------------------------------------------------------
+        await FS.writeFile({
+          path: `${this.root}/${file.path}`,
+
+          directory: "DATA",
+
+          data: base64Data,
+        });
+        console.log("Đã lưu:", file.path);
+
+        return file.path;
+      } catch (error) {
+        console.error("[SAVE FILE] Error:" + error);
       }
-
-      if (this.finished) {
-        throw new Error("EPUB đã finish(), không thể saveFile()");
-      }
-
-      if (!file || typeof file !== "object") {
-        throw new Error("File không hợp lệ");
-      }
-
-      if (!file.path) {
-        throw new Error("File phải có path");
-      }
-
-      if (typeof file.data === "undefined" || file.data === null) {
-        throw new Error(`File không có data: ${file.path}`);
-      }
-
-      const FS = Capacitor.Plugins.Filesystem;
-
-      // -------------------------------------------------------
-      // Tạo thư mục cha
-      // -------------------------------------------------------
-
-      await EpubDowload.ensureDir(FS, this.root, file.path);
-
-      // -------------------------------------------------------
-      // Convert data -> Base64
-      // -------------------------------------------------------
-
-      const base64Data = await EpubDowload.dataToBase64(file.data);
-
-      // -------------------------------------------------------
-      // Ghi file
-      // -------------------------------------------------------
-
-      await FS.writeFile({
-        path: `${this.root}/${file.path}`,
-
-        directory: "DATA",
-
-        data: base64Data,
-      });
-
-      console.log("Đã lưu:", file.path);
-
-      return file.path;
     }
 
     // =========================================================
