@@ -227,22 +227,22 @@
 
 
                     #${MOD.tabId} #mod-status {
-                max-height: 360px;
-                overflow-y: auto;
-                padding: 8px;
-                margin-top: 8px;
-                border-radius: 6px;
-                background: #111;
-                color: #0f0;
-                font-family: monospace;
-                font-size: 12px;
-                line-height: 1.5;
-                white-space: pre-wrap;
-                word-break: break-word;
-            }
+                                max-height: 360px;
+                                overflow-y: auto;
+                                padding: 8px;
+                                margin-top: 8px;
+                                border-radius: 6px;
+                                background: #111;
+                                color: #0f0;
+                                font-family: monospace;
+                                font-size: 12px;
+                                line-height: 1.5;
+                                white-space: pre-wrap;
+                                word-break: break-word;
+                    }
 
                         /* DARK MODE */
-                        @media (prefers-color-scheme: dark) {
+                            @media (prefers-color-scheme: dark) {
                             #${MOD.tabId} {
                                 --mod-bg: #121212;
                                 --mod-card-bg: #1e1e1e;
@@ -274,9 +274,9 @@
                             /* TOGGLE TRUE / FALSE */
 
                         #${MOD.tabId} .mod-toggle {
-                display: flex;
-                align-items: center;
-            }
+                                display: flex;
+                                align-items: center;
+                            }
 
             #${MOD.tabId} .mod-toggle .mod-toggle-icon {
                 width: 22px;
@@ -312,17 +312,31 @@
                   flex-shrink: 0;
                   font-size: 14px;
                 }
-                    button.mod-download-btn {
-                        margin-left: 8px;
-                        padding: 5px 10px;
-                        border: 0;
-                        border-radius: 5px;
-                        background: #2196f3;
-                        color: white;
-                        font-size: 12px;
-                        cursor: pointer;
-                    }
-        `;
+                 button.mod-download-btn {
+    width: 40px !important;
+    height: calc(100% - 20px) !important;
+
+    margin: 5px 0px 5px 5px !important;
+
+    padding: 0 !important;
+
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+
+    background: none;
+    border: 0;
+}
+button.mod-download-btn .mod-epub-icon {
+    width: auto !important;
+    height: 100% !important;
+
+    max-width: 40px !important;
+    max-height: 100% !important;
+
+    display: block !important;
+    flex: 0 0 auto !important;
+} `;
     }
 
     function apply() {
