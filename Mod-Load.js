@@ -38,7 +38,10 @@
 
       console.log("[MOD BUTTON] Click → loadJS");
 
-      await MOD.loadJS();
+      for (const name of MOD.files) {
+        await MOD.updateFile(name);
+      }
+      this.showToast("Đang update file Mod...");
     },
     createbtnMod() {
       const navbar = document.getElementById("mainnavbar");
@@ -106,7 +109,7 @@
         window.Capacitor?.Plugins?.CapacitorSQLitePlugin;
 
       if (!SQLite) {
-        console.error("[MOD SQLITE] Không tìm thấy CapacitorSQLite");
+        this.showToast("[MOD SQLITE] Không tìm thấy CapacitorSQLite");
         return false;
       }
 
@@ -335,6 +338,51 @@
         console.error("[MOD LOAD] Ghi SQL lỗi:", name);
         return false;
       }
+    },
+    showToast(message, duration = 2000) {
+      let toast = document.getElementById("__mod_toast");
+
+      if (!toast) {
+        toast = document.createElement("div");
+        toast.id = "__mod_toast";
+
+        Object.assign(toast.style, {
+          position: "fixed",
+          left: "50%",
+          bottom: "80px",
+          transform: "translateX(-50%)",
+          zIndex: "2147483647",
+
+          padding: "10px 18px",
+          borderRadius: "8px",
+
+          background: "rgba(0, 0, 0, 0.85)",
+          color: "#fff",
+
+          fontSize: "14px",
+          fontFamily: "sans-serif",
+
+          pointerEvents: "none",
+          opacity: "0",
+
+          transition: "opacity 0.2s ease",
+
+          maxWidth: "80%",
+          textAlign: "center",
+        });
+
+        document.body.appendChild(toast);
+      }
+
+      toast.textContent = message;
+
+      toast.style.opacity = "1";
+
+      clearTimeout(toast._timer);
+
+      toast._timer = setTimeout(() => {
+        toast.style.opacity = "0";
+      }, duration);
     },
     async init() {
       this.checkOnline();
