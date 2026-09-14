@@ -321,16 +321,16 @@
                 app.celoader.bookdownloadedrow;
 
               app.celoader.bookdownloadedrow = function (ele, data) {
-                // Hàm gốc tạo row
-                const row = window.__MOD_OLD_BOOKDOWNLOADEDROW__.apply(
+                // Hàm gốc tạo bookrowcont
+                const bookrowcont = window.__MOD_OLD_BOOKDOWNLOADEDROW__.apply(
                   this,
                   arguments,
                 );
-
+                const row = container.querySelector(".bookrow");
                 // Thêm nút cho row mới
                 addDownloadButton(row, data);
 
-                return row;
+                return bookrowcont;
               };
 
               console.log("[MOD] Đã hook bookdownloadedrow");
