@@ -29,6 +29,9 @@
       this.root = `TempEpub/${this.tempName}`;
       this.inited = false;
       this.finished = false;
+      // Cache riêng cho instance này, không dùng static nữa
+      this._createdDirs = new Set(); // các path đã tạo xong
+      this._dirLocks = new Map(); // path -> Promise (đang mkdir dở, phòng khi có song song)
     }
 
     // =========================================================
@@ -40,34 +43,75 @@
     // =========================================================
 
     async init() {
-      if (this.inited) {
-        return this;
-      }
+      if (this.inited) return this;
 
       const FS = Capacitor.Plugins.Filesystem;
-
-      try {
-        await FS.mkdir({
-          path: this.root,
-          directory: "DATA",
-          recursive: true,
-        });
-      } catch (error) {
-        const message =
-          error && error.message ? String(error.message) : String(error);
-
-        if (message.toLowerCase().indexOf("directory exists") < 0) {
-          throw error;
-        }
-
-        console.log("[EPUB] Root đã tồn tại:", this.root);
-      }
+      await this._mkdirOnce(FS, this.root);
 
       this.inited = true;
-
       console.log("EPUB root:", this.root);
-
       return this;
+    }
+
+    // Hàm dùng chung: mkdir 1 path, có cache + lock, KHÔNG static nữa
+    async _mkdirOnce(FS, path) {
+      if (this._createdDirs.has(path)) {
+        return; // đã tạo xong rồi
+      }
+
+      if (this._dirLocks.has(path)) {
+        await this._dirLocks.get(path); // đang có lệnh mkdir khác chạy -> đợi chung
+        return;
+      }
+
+      const mkdirPromise = (async () => {
+        try {
+          await FS.mkdir({ path, directory: "DATA", recursive: true });
+          console.log("[EPUB] Tạo thư mục:", path);
+        } catch (error) {
+          const message = (
+            error && error.message ? String(error.message) : String(error)
+          ).toLowerCase();
+          if (message.indexOf("exist") < 0) {
+            throw error;
+          }
+        }
+      })();
+
+      this._dirLocks.set(path, mkdirPromise);
+
+      try {
+        await mkdirPromise;
+        this._createdDirs.add(path);
+      } finally {
+        this._dirLocks.delete(path);
+      }
+    }
+
+    // =========================================================
+    // TẠO THƯ MỤC CHA
+    //
+    // Ví dụ:
+    //
+    // filePath:
+    // OEBPS/Text/chapter_1.xhtml
+    //
+    // tạo:
+    // root/OEBPS/Text
+    //
+    // =========================================================
+    async ensureDir(filePath) {
+      const FS = Capacitor.Plugins.Filesystem;
+      const relativePath = String(filePath).replace(/^\/+/, "");
+      const parts = relativePath.split("/");
+      parts.pop(); // bỏ tên file
+
+      let currentPath = this.root;
+      for (const part of parts) {
+        if (!part) continue;
+        currentPath += "/" + part;
+        await this._mkdirOnce(FS, currentPath);
+      }
     }
 
     // =========================================================
@@ -300,64 +344,6 @@
       }
 
       return EpubDowload.textToBase64(data);
-    }
-
-    // =========================================================
-    // TẠO THƯ MỤC CHA
-    //
-    // Ví dụ:
-    //
-    // filePath:
-    // OEBPS/Text/chapter_1.xhtml
-    //
-    // tạo:
-    // root/OEBPS/Text
-    //
-    // =========================================================
-
-    static async ensureDir(FS, root, filePath) {
-      const relativePath = String(filePath).replace(/^\/+/, "");
-
-      const parts = relativePath.split("/");
-
-      // Bỏ tên file
-      parts.pop();
-
-      if (parts.length === 0) {
-        return;
-      }
-
-      // Tạo từng thư mục, bỏ qua lỗi Directory exists
-      let currentPath = root;
-
-      for (const part of parts) {
-        if (!part) {
-          continue;
-        }
-
-        currentPath += "/" + part;
-
-        try {
-          await FS.mkdir({
-            path: currentPath,
-            directory: "DATA",
-            recursive: true,
-          });
-
-          console.log("[EPUB] Tạo thư mục:", currentPath);
-        } catch (error) {
-          const message =
-            error && error.message ? String(error.message) : String(error);
-
-          if (message.toLowerCase().indexOf("directory exists") >= 0) {
-            console.log("[EPUB] Thư mục đã tồn tại:", currentPath);
-
-            continue;
-          }
-
-          throw error;
-        }
-      }
     }
 
     // =========================================================
