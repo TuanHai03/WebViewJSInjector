@@ -26,10 +26,11 @@
       return `https://raw.githubusercontent.com/${this.GITHUB_USER}/${this.GITHUB_REPO}/${this.GITHUB_BRANCH}/`;
     },
     files: [
-      "mod-core.js",
+      "Mod-Style.js",
+      "Mod-Core.js",
       "EpubBuilder.js",
       "EpubDowload.js",
-      "mod-buttons.js",
+      "Mod-Buttons.js",
     ],
     navId: "mod-navbar-item",
     async _loadClickHandler(event) {
