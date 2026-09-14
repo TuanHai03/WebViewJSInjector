@@ -512,8 +512,14 @@
     // -----------------------------------------------------
   ];
   MOD.fun = MOD.fun || {};
+  MOD.isDowload = false;
   MOD.fun.downloadEPUB = async function (data) {
     try {
+      if (MOD.isDowload !== false) {
+        MOD.showToast("Đang có sách tải không thể thực hiện!");
+        return;
+      }
+      MOD.isDowload = true;
       console.log("===== DOWNLOAD INFO =====");
       console.log("Book:", data);
       console.log("id:", data && data.id);
@@ -531,16 +537,12 @@
       await epub.init();
 
       const chapterList = await getChapterListCache(data.host, data.id);
-
-      console.log("[MOD] chapterList:", chapterList);
       if (!Array.isArray(chapterList)) {
         throw new Error("chapterList không phải Array");
       }
       const builder = new EpubBuilder();
 
       const b = await builder.createBaseFiles(data, chapterList);
-
-      console.log("[MOD] Base files:", b);
 
       for (const x of b) {
         console.log("[MOD] Save:", x.path);
@@ -558,9 +560,6 @@
 
           // Key cache chapter
           const key = data.chapterPreKey + c.cid;
-
-          console.log("[MOD] Chapter key:", key);
-
           // Lấy nội dung chapter
           let content = await MOD.fun.GetContent(key);
 
@@ -570,9 +569,6 @@
 
           // Tạo file chapter
           const x = await builder.createChapter(c, content);
-
-          console.log("[MOD] Save chapter:", x.path);
-
           await epub.saveFile(x);
         } catch (error) {
           console.error(`[MOD] Lỗi chapter ${index}:`, error);
@@ -581,9 +577,11 @@
 
       const result = await epub.finish();
 
-      console.log("[MOD] EPUB hoàn tất:", result);
+      MOD.showToast("[MOD] EPUB hoàn tất:", result);
     } catch (error) {
-      console.error("[MOD] Download EPUB lỗi:", error);
+      MOD.showToast("[MOD] Download EPUB lỗi:", error);
+    } finally {
+      MOD.isDowload = false;
     }
   };
   MOD.fun.GetContent = async function (key) {
