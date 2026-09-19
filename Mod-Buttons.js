@@ -671,12 +671,12 @@
       if (MOD.isRaw) {
         const regex = /<i[^>]*?t=['"]([^'"]*)['"][^>]*?>(.*?)<\/i>/gis;
 
-        const raw = html.replace(regex, "$1").replace(/ /g, "");
+        const raw = html.replace(regex, "$1").replace(/ /g, "").replace(/\n\t?/g, "<br/>");
 
         return raw.trim();
       }
 
-      html = html.replace(/<i\b[^>]*>(.*?)<\/i>/gis, "<i>$1</i>");
+      html = html.replace(/<i\b[^>]*>(.*?)<\/i>/gis, "<i>$1</i>").replace(/\n\t?/g, "<br/>");
 
       return html.trim();
     } catch (error) {
