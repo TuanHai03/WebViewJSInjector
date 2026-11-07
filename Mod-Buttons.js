@@ -76,6 +76,7 @@
     return;
   }
   const MOD = window.MOD;
+  MOD.fun = MOD.fun || {};
   MOD.fun.BookBtnDefs = {
     download: {
       cls: "mod-download-btn",
@@ -538,7 +539,7 @@
     //
     // -----------------------------------------------------
   ];
-  MOD.fun = MOD.fun || {};
+
   MOD.isDowload = false;
   MOD.fun.downloadEPUB = async function (data) {
     try {
