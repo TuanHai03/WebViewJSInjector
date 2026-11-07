@@ -95,7 +95,49 @@
     remove: {
       cls: "mod-delete-btn",
       title: "Delete book",
-      icon: `<svg>...</svg>`,
+      icon: `
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1095 1095">
+            <g stroke-linejoin="round" stroke-linecap="round">
+
+              <!-- Tờ giấy: nền đen -->
+              <path d="M189 118 H664 L869 323 V740 H144 V163 Q144 118 189 118 Z"
+                    fill="#050505" stroke="#050505" stroke-width="38"/>
+
+              <!-- Viền trắng bên trong tờ giấy -->
+              <path d="M191 156 H649 L831 339 V720 H182 V165 Q182 156 191 156 Z"
+                    fill="none" stroke="#FFFFFF" stroke-width="12"/>
+
+              <!-- Góc gấp: viền trắng -->
+              <path d="M649 156 V300 Q649 339 688 339 H831"
+                    fill="none" stroke="#FFFFFF" stroke-width="12"/>
+
+              <!-- Thùng rác trắng, căn giữa trục x = 506.5 -->
+              <g transform="translate(-40.5 43)">
+                <path d="M480 290 V255 H614 V290" fill="none" stroke="#FFFFFF" stroke-width="30"/>
+                <rect x="380" y="290" width="334" height="44" rx="14"
+                      fill="#FFFFFF" stroke="#FFFFFF" stroke-width="10"/>
+                <path d="M410 350 H684 L660 630 H434 Z"
+                      fill="#FFFFFF" stroke="#FFFFFF" stroke-width="14"/>
+                <path d="M485 405 V580 M547 405 V580 M609 405 V580"
+                      stroke="#050505" stroke-width="24" fill="none"/>
+              </g>
+
+              <!-- Thẻ nhãn: nền đen + viền trắng -->
+              <rect x="144" y="703" width="725" height="294" rx="48"
+                    fill="#050505" stroke="#050505" stroke-width="38"/>
+              <rect x="172" y="731" width="669" height="238" rx="30"
+                    fill="none" stroke="#FFFFFF" stroke-width="12"/>
+
+              <!-- Chữ DEL: nhỏ lại (scale 0.75), nét đậm hơn (stroke 46 → ~35 sau khi thu nhỏ) -->
+              <g transform="translate(506.5 850) scale(0.75) translate(-506.5 -850) translate(101 0)"
+                fill="none" stroke="#FFFFFF" stroke-width="46">
+                <path d="M215 770 V930 H250 Q320 930 320 850 Q320 770 250 770 Z"/>
+                <path d="M455 770 H385 V930 H455 M385 850 H445"/>
+                <path d="M520 770 V930 H595"/>
+              </g>
+            </g>
+          </svg>
+`,
       action: async function (data, btn) {},
     },
   };
