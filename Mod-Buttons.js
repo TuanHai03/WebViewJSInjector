@@ -266,85 +266,122 @@
           label: "Fix Login",
           defaultValue: false,
 
+          // fn: (MOD, checked) => {
+          //   const manager = app?.net?.networkManagerXHR;
+
+          //   if (!checked) {
+          //     // Khôi phục hàm gốc
+          //     if (window.__MOD_OLD_VerifyDomain) {
+          //       if (manager) {
+          //         manager.verifyDomain = window.__MOD_OLD_VerifyDomain;
+          //       }
+
+          //       delete window.__MOD_OLD_VerifyDomain;
+
+          //       console.log("[MOD] Đã bỏ hook verifyDomain");
+          //     }
+          //     return;
+          //   }
+
+          //   try {
+          //     if (!manager?.verifyDomain) {
+          //       MOD.status("Không tìm thấy networkManagerXHR.verifyDomain");
+          //       return;
+          //     }
+
+          //     if (!window.__MOD_OLD_VerifyDomain) {
+          //       window.__MOD_OLD_VerifyDomain = manager.verifyDomain;
+
+          //       manager.verifyDomain = async function (domain) {
+          //         const result = {
+          //           name: domain,
+          //           status: "unknown",
+          //           ping: 0,
+          //           lastCheck: Date.now(),
+          //           checkedWith: "xhr",
+          //         };
+
+          //         const xhr = new XMLHttpRequest();
+
+          //         xhr.open("GET", domain + "/warp.php", true);
+          //         xhr.timeout = 5000;
+          //         xhr.setRequestHeader("x-stv-transport", "web");
+
+          //         return new Promise((resolve) => {
+          //           xhr.onload = function () {
+          //             if (xhr.status >= 200 && xhr.status < 300) {
+          //               result.status = "alive";
+          //               result.ping = Date.now() - result.lastCheck;
+          //             } else {
+          //               result.status = "dead";
+          //               result.ping = -1;
+          //             }
+
+          //             resolve(result);
+          //           };
+
+          //           xhr.onerror = function () {
+          //             result.status = "dead";
+          //             result.ping = -1;
+          //             resolve(result);
+          //           };
+
+          //           xhr.ontimeout = function () {
+          //             result.status = "timeout";
+          //             result.ping = -1;
+          //             resolve(result);
+          //           };
+
+          //           xhr.send();
+          //         });
+          //       };
+
+          //       MOD.status("Đã thay thế verifyDomain thành công");
+          //     }
+          //   } catch (error) {
+          //     if (manager && window.__MOD_OLD_VerifyDomain) {
+          //       manager.verifyDomain = window.__MOD_OLD_VerifyDomain;
+          //     }
+
+          //     delete window.__MOD_OLD_VerifyDomain;
+
+          //     MOD.status("Fix-Login lỗi: " + error.message);
+          //   }
+          // },
           fn: (MOD, checked) => {
-            const manager = app?.net?.networkManagerXHR;
-
-            if (!checked) {
-              // Khôi phục hàm gốc
-              if (window.__MOD_OLD_VerifyDomain) {
-                if (manager) {
-                  manager.verifyDomain = window.__MOD_OLD_VerifyDomain;
-                }
-
-                delete window.__MOD_OLD_VerifyDomain;
-
-                console.log("[MOD] Đã bỏ hook verifyDomain");
-              }
-              return;
-            }
-
             try {
-              if (!manager?.verifyDomain) {
-                MOD.status("Không tìm thấy networkManagerXHR.verifyDomain");
+              const nm = app?.net?.networkManagerXHR;
+
+              if (!nm) {
+                MOD.status("Không tìm thấy networkManagerXHR");
+
                 return;
               }
 
-              if (!window.__MOD_OLD_VerifyDomain) {
-                window.__MOD_OLD_VerifyDomain = manager.verifyDomain;
+              if (!Array.isArray(nm.defaultDomains)) {
+                MOD.status("defaultDomains không phải Array");
+                return;
+              }
 
-                manager.verifyDomain = async function (domain) {
-                  const result = {
-                    name: domain,
-                    status: "unknown",
-                    ping: 0,
-                    lastCheck: Date.now(),
-                    checkedWith: "xhr",
-                  };
+              const domain = "https://sangtacviet.com";
 
-                  const xhr = new XMLHttpRequest();
+              // =================================================
+              // CHECKBOX ON
+              // =================================================
 
-                  xhr.open("GET", domain + "/warp.php", true);
-                  xhr.timeout = 5000;
-                  xhr.setRequestHeader("x-stv-transport", "web");
+              if (checked) {
+                const before = nm.defaultDomains.length;
 
-                  return new Promise((resolve) => {
-                    xhr.onload = function () {
-                      if (xhr.status >= 200 && xhr.status < 300) {
-                        result.status = "alive";
-                        result.ping = Date.now() - result.lastCheck;
-                      } else {
-                        result.status = "dead";
-                        result.ping = -1;
-                      }
+                nm.defaultDomains = nm.defaultDomains.filter(
+                  (x) => x !== domain,
+                );
 
-                      resolve(result);
-                    };
+                const after = nm.defaultDomains.length;
+                MOD.status(`Fix Login ON - đã xóa ${before - after} domain`);
 
-                    xhr.onerror = function () {
-                      result.status = "dead";
-                      result.ping = -1;
-                      resolve(result);
-                    };
-
-                    xhr.ontimeout = function () {
-                      result.status = "timeout";
-                      result.ping = -1;
-                      resolve(result);
-                    };
-
-                    xhr.send();
-                  });
-                };
-
-                MOD.status("Đã thay thế verifyDomain thành công");
+                return;
               }
             } catch (error) {
-              if (manager && window.__MOD_OLD_VerifyDomain) {
-                manager.verifyDomain = window.__MOD_OLD_VerifyDomain;
-              }
-
-              delete window.__MOD_OLD_VerifyDomain;
-
               MOD.status("Fix-Login lỗi: " + error.message);
             }
           },
