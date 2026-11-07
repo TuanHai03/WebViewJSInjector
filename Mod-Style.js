@@ -312,46 +312,35 @@
                   flex-shrink: 0;
                   font-size: 14px;
                 }
-                 button.mod-download-btn {
-                        width: 40px !important;
-                        height: calc(100% - 20px) !important;
+                button.mod-download-btn,
+button.mod-delete-btn {
+    width: 32px !important;              /* thu từ 40px để hai icon gần nhau hơn */
+    height: calc(100% - 20px) !important;
+    margin: 5px 0 !important;
+    padding: 0 !important;
 
-                        margin: 5px 0px 5px 0px !important;
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
 
-                        padding: 0 !important;
+    background: none;
+    border: 0;
+}
 
-                        display: inline-flex !important;
-                        align-items: center;
-                        justify-content: center;
-
-                        background: none;
-                        border: 0;
-                    }
-                        button.mod-delete-btn {
-                        width: 40px !important;
-                        height: calc(100% - 20px) !important;
-
-                        margin: 5px 0px 5px 0px !important;
-
-                        padding: 0 !important;
-
-                        display: inline-flex !important;
-                        align-items: center;
-                        justify-content: center;
-
-                        background: none;
-                        border: 0;
-                    }
+/* Kéo hai nút sát nhau */
+button.mod-download-btn + button.mod-delete-btn {
+    margin-left: 0px !important;        /* chỉnh số này: càng âm càng sát */
+}
  .mod-epub-icon {
     width: auto !important;
-    height: 70% !important;      /* giảm từ 100% xuống 70% */
+    height: 100% !important;      /* giảm từ 100% xuống 70% */
 
     max-width: 28px !important;  /* nhỏ hơn bề rộng nút 40px để có lề */
-    max-height: 70% !important;
+    max-height: 100% !important;
 
     display: block !important;
     flex: 0 0 auto !important;
-}
+}`;
     }
 
     function apply() {
