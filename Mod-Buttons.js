@@ -138,7 +138,9 @@
             </g>
           </svg>
 `,
-      action: async function (data, btn) {},
+      action: async function (data, btn) {
+        console.log("[MOD] Delete");
+      },
     },
   };
   const updateGroup = {
