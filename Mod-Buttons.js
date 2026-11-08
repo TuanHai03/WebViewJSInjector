@@ -76,6 +76,17 @@
     return;
   }
   const MOD = window.MOD;
+  // =====================================================
+  // CẤU HÌNH OFFLINE BOOK
+  // Giữ cấu hình cũ nếu injector chạy lại
+  // =====================================================
+  MOD.cfg = MOD.cfg || {};
+
+  MOD.cfg.offlineList = MOD.cfg.offlineList || {
+    table: "files",
+    key: "offlineBook",
+    column: "content",
+  };
   MOD.fun = MOD.fun || {};
   MOD.fun.BookBtnDefs = {
     download: {
@@ -138,8 +149,12 @@
             </g>
           </svg>
 `,
-      action: async function (data, btn) {
-        console.log("[MOD] Delete");
+      action: async (data, btn, row) => {
+        const success = await MOD.fun.RemoveBook(data);
+
+        if (success) {
+          MOD.fun.RemoveBookDiv(row);
+        }
       },
     },
   };
@@ -490,25 +505,7 @@
               // =================================================
               // 1. KHÔI PHỤC bookdownloadedrow (nếu đã hook)
               // =================================================
-              if (window.__MOD_OLD_BOOKDOWNLOADEDROW__) {
-                app.celoader.bookdownloadedrow =
-                  window.__MOD_OLD_BOOKDOWNLOADEDROW__;
-
-                delete window.__MOD_OLD_BOOKDOWNLOADEDROW__;
-
-                console.log("[MOD] Đã khôi phục bookdownloadedrow");
-              }
-
-              // =================================================
-              // 2. XÓA CÁC NÚT DO MOD TẠO (Download...)
-              // =================================================
-              document
-                .querySelectorAll(".mod-download-btn")
-                .forEach(function (btn) {
-                  btn.remove();
-                });
-
-              console.log("[MOD] Đã xóa Download button");
+              MOD.fun.RestoreBookDowload();
 
               // =================================================
               // 3. XÓA TAB / NAVBAR / STYLE CỦA MOD
@@ -738,7 +735,7 @@
       return "Lỗi đọc dữ liệu";
     }
   };
-  MOD.fun.RemoveBook = async function (key) {};
+
   // =====================================================
   // CẤU HÌNH
   // =====================================================
@@ -803,22 +800,6 @@
     }
 
     return btn;
-  };
-
-  // =====================================================
-  // REMOVE BUTTONS
-  // =====================================================
-  MOD.fun.RemoveBookBtns = function (keys) {
-    const classes = MOD.__bookBtnCls;
-
-    (keys || Object.keys(classes)).forEach(function (key) {
-      const cls = classes[key];
-      if (!cls) return;
-
-      document.querySelectorAll("." + cls).forEach(function (btn) {
-        btn.remove();
-      });
-    });
   };
 
   // =====================================================
@@ -1031,5 +1012,500 @@
     });
   };
 
+  // =====================================================
+  // KHỞI TẠO DB LOCK TOÀN CỤC
+  //
+  // - Chỉ lưu API gốc một lần.
+  // - Chỉ bọc window.query / window.noQuery một lần.
+  // - MOD.raw không đi qua hàng đợi.
+  // - Code bên trong WithDBLock phải sử dụng MOD.raw.*.
+  // =====================================================
+  MOD.raw = MOD.raw || {};
+
+  if (
+    typeof MOD.raw.query !== "function" &&
+    typeof window.query === "function"
+  ) {
+    MOD.raw.query = window.query;
+  }
+
+  if (
+    typeof MOD.raw.noQuery !== "function" &&
+    typeof window.noQuery === "function"
+  ) {
+    MOD.raw.noQuery = window.noQuery;
+  }
+
+  // Khởi tạo hàng đợi
+  MOD.__dbQueue = MOD.__dbQueue || Promise.resolve();
+
+  // Hàm khóa DB
+  MOD.fun.WithDBLock = function (callback) {
+    if (typeof callback !== "function") {
+      return Promise.reject(
+        new TypeError("WithDBLock: callback must be a function"),
+      );
+    }
+
+    const task = MOD.__dbQueue.then(callback, callback);
+
+    // Không để một tác vụ lỗi làm hỏng hàng đợi
+    MOD.__dbQueue = task.then(
+      () => undefined,
+      () => undefined,
+    );
+
+    return task;
+  };
+
+  // Chỉ bọc API gốc một lần
+  if (!MOD.__dbWrapped) {
+    if (
+      typeof MOD.raw.query === "function" &&
+      typeof MOD.raw.noQuery === "function"
+    ) {
+      window.query = function (...args) {
+        return MOD.fun.WithDBLock(() => MOD.raw.query.apply(window, args));
+      };
+
+      window.noQuery = function (...args) {
+        return MOD.fun.WithDBLock(() => MOD.raw.noQuery.apply(window, args));
+      };
+
+      MOD.__dbWrapped = true;
+    } else {
+      console.error("[MOD] Không tìm thấy window.query / window.noQuery");
+    }
+  }
+
+  // Dùng chung khóa cho offlineBook
+  MOD.fun.WithOfflineListLock = MOD.fun.WithDBLock;
+
+  // =====================================================
+  // HÀM HỖ TRỢ SQL
+  // =====================================================
+
+  // Escape chuỗi SQL
+  MOD.fun.SQLQuote = function (value) {
+    return "'" + String(value).replace(/'/g, "''") + "'";
+  };
+
+  // Kiểm tra tên bảng / cột
+  MOD.fun.SQLValidIdentifier = function (value) {
+    return typeof value === "string" && /^[A-Za-z_][A-Za-z0-9_]*$/.test(value);
+  };
+
+  // Kiểm tra cấu hình offlineBook
+  MOD.fun.ValidateOfflineConfig = function () {
+    const cfg = MOD.cfg?.offlineList;
+
+    return !!(
+      cfg &&
+      MOD.fun.SQLValidIdentifier(cfg.table) &&
+      MOD.fun.SQLValidIdentifier(cfg.column) &&
+      typeof cfg.key === "string" &&
+      cfg.key.length > 0
+    );
+  };
+
+  // =====================================================
+  // XÓA SQL THEO KEY
+  //
+  // NỘI BỘ: Không tự xếp hàng.
+  //
+  // like = false: khớp chính xác
+  // like = true : khớp tiền tố
+  //
+  // Chỉ gọi bên trong WithDBLock.
+  // =====================================================
+  MOD.fun.RemoveSQL = async function (table, key, like = false) {
+    if (typeof MOD.raw?.noQuery !== "function") {
+      console.error("[MOD] RemoveSQL: noQuery unavailable");
+      return false;
+    }
+
+    if (
+      !MOD.fun.SQLValidIdentifier(table) ||
+      key == null ||
+      String(key).length === 0
+    ) {
+      console.error("[MOD] RemoveSQL: invalid input");
+      return false;
+    }
+
+    try {
+      const value = String(key);
+      let condition;
+
+      if (like) {
+        // Escape ký tự đặc biệt của LIKE
+        const safe = value
+          .replace(/\\/g, "\\\\")
+          .replace(/%/g, "\\%")
+          .replace(/_/g, "\\_");
+
+        condition = `"key" LIKE ${MOD.fun.SQLQuote(safe + "%")} ESCAPE '\\'`;
+      } else {
+        condition = `"key" = ${MOD.fun.SQLQuote(value)}`;
+      }
+
+      await MOD.raw.noQuery(`DELETE FROM "${table}" WHERE ${condition};`);
+
+      return true;
+    } catch (e) {
+      console.error("[MOD] RemoveSQL Error:", table, key, e);
+      return false;
+    }
+  };
+
+  // =====================================================
+  // XÓA SQL THEO KEY
+  //
+  // CÔNG KHAI: Tự xếp hàng.
+  // =====================================================
+  MOD.fun.RemoveSQLSafe = function (table, key, like = false) {
+    return MOD.fun.WithDBLock(() => MOD.fun.RemoveSQL(table, key, like));
+  };
+
+  // =====================================================
+  // ĐỌC DANH SÁCH OFFLINE
+  //
+  // Array: đọc thành công
+  // []   : chưa có bản ghi
+  // null : lỗi query / JSON / cấu hình
+  //
+  // NỘI BỘ: Không tự xếp hàng.
+  // =====================================================
+  MOD.fun.ReadOfflineList = async function () {
+    if (typeof MOD.raw?.query !== "function") {
+      console.error("[MOD] ReadOfflineList: query unavailable");
+      return null;
+    }
+
+    if (!MOD.fun.ValidateOfflineConfig()) {
+      console.error("[MOD] ReadOfflineList: invalid configuration");
+      return null;
+    }
+
+    const cfg = MOD.cfg.offlineList;
+
+    try {
+      const rows = await MOD.raw.query(
+        `SELECT "${cfg.column}" AS data
+       FROM "${cfg.table}"
+       WHERE "key" = ${MOD.fun.SQLQuote(cfg.key)};`,
+      );
+
+      if (!Array.isArray(rows)) {
+        console.error("[MOD] ReadOfflineList: invalid query result", rows);
+        return null;
+      }
+
+      const row = rows.find((r) => r && r.data != null);
+
+      // Không có bản ghi offlineBook
+      if (!row) return [];
+
+      const list = JSON.parse(row.data);
+
+      if (!Array.isArray(list)) {
+        console.error("[MOD] ReadOfflineList: data is not an array");
+        return null;
+      }
+
+      return list;
+    } catch (e) {
+      console.error("[MOD] ReadOfflineList Error:", e);
+      return null;
+    }
+  };
+
+  // =====================================================
+  // XÓA ENTRY KHỎI DANH SÁCH OFFLINE
+  //
+  // NỘI BỘ: Không tự xếp hàng.
+  // Chỉ gọi khi đang giữ WithDBLock.
+  //
+  // currentList:
+  // - undefined: đọc lại danh sách mới nhất.
+  // - Array: sử dụng danh sách được truyền vào.
+  // =====================================================
+  MOD.fun.RemoveOfflineBookEntryNow = async function (host, id, currentList) {
+    if (
+      !MOD.fun.ValidateOfflineConfig() ||
+      typeof MOD.raw?.noQuery !== "function"
+    ) {
+      console.error("[MOD] RemoveOfflineBookEntryNow: invalid config/API");
+      return false;
+    }
+
+    const cfg = MOD.cfg.offlineList;
+
+    try {
+      const list =
+        currentList === undefined
+          ? await MOD.fun.ReadOfflineList()
+          : currentList;
+
+      if (!Array.isArray(list)) {
+        console.error("[MOD] RemoveOfflineBookEntryNow: invalid list");
+        return false;
+      }
+
+      if (list.length === 0) return true;
+
+      const newList = list.filter(
+        (item) =>
+          !(item && item.host === host && String(item.id) === String(id)),
+      );
+
+      // Không có entry cần xóa
+      if (newList.length === list.length) return true;
+
+      const json = JSON.stringify(newList);
+
+      await MOD.raw.noQuery(
+        `UPDATE "${cfg.table}"
+       SET "${cfg.column}" = ${MOD.fun.SQLQuote(json)}
+       WHERE "key" = ${MOD.fun.SQLQuote(cfg.key)};`,
+      );
+
+      return true;
+    } catch (e) {
+      console.error("[MOD] RemoveOfflineBookEntryNow Error:", e);
+      return false;
+    }
+  };
+
+  // =====================================================
+  // XÓA ENTRY KHỎI DANH SÁCH OFFLINE
+  //
+  // CÔNG KHAI: Tự xếp hàng.
+  // =====================================================
+  MOD.fun.RemoveOfflineBookEntry = function (host, id) {
+    return MOD.fun.WithOfflineListLock(async () => {
+      if (
+        typeof host !== "string" ||
+        !host.trim() ||
+        id == null ||
+        String(id).trim().length === 0
+      ) {
+        console.error("[MOD] RemoveOfflineBookEntry: invalid input");
+        return false;
+      }
+
+      return MOD.fun.RemoveOfflineBookEntryNow(host.trim(), String(id).trim());
+    });
+  };
+
+  // =====================================================
+  // KIỂM TRA KEY CỦA SÁCH
+  //
+  // offlineBook_qidian_1044856729
+  // offlineBook_qidian_1044856729_chapters
+  // offlineBook_qidian_1044856729_
+  //
+  // Chỉ chấp nhận đúng namespace của cuốn sách.
+  // =====================================================
+  MOD.fun.ValidateBookKeys = function (host, id, entry) {
+    const expectedBookKey = `offlineBook_${host}_${id}`;
+
+    const bookKey = entry?.key || expectedBookKey;
+    const chapterPre = entry?.chapterPreKey || bookKey + "_";
+    const chapterStore = entry?.chapterStoreKey || bookKey + "_chapters";
+
+    if (
+      typeof bookKey !== "string" ||
+      typeof chapterPre !== "string" ||
+      typeof chapterStore !== "string"
+    ) {
+      return null;
+    }
+
+    // Không cho phép entry trỏ sang sách khác
+    if (bookKey !== expectedBookKey) {
+      console.error("[MOD] Invalid bookKey:", bookKey);
+      return null;
+    }
+
+    // Prefix phải có dấu phân cách cuối
+    if (chapterPre !== bookKey + "_") {
+      console.error("[MOD] Invalid chapterPreKey:", chapterPre);
+      return null;
+    }
+
+    // Key kho danh sách chương phải chính xác
+    if (chapterStore !== bookKey + "_chapters") {
+      console.error("[MOD] Invalid chapterStoreKey:", chapterStore);
+      return null;
+    }
+
+    return {
+      bookKey,
+      chapterPre,
+      chapterStore,
+    };
+  };
+
+  // =====================================================
+  // XÓA TOÀN BỘ DỮ LIỆU CỦA MỘT CUỐN SÁCH
+  //
+  // Toàn bộ quá trình giữ khóa DB.
+  //
+  // - Không đọc được offlineBook => dừng.
+  // - Không tìm thấy entry => dừng.
+  // - Không có dòng để xóa => thành công.
+  // - Một bước xóa lỗi => vẫn tiếp tục.
+  // - Cuối cùng cập nhật offlineBook.
+  // - Trả về true nếu không có bước nào lỗi.
+  // =====================================================
+  MOD.fun.RemoveBook = function (data) {
+    return MOD.fun.WithOfflineListLock(async () => {
+      const id = data?.id;
+      const host = data?.host;
+
+      // -------------------------------------------------
+      // 0. Kiểm tra đầu vào
+      // -------------------------------------------------
+      if (
+        id == null ||
+        String(id).trim().length === 0 ||
+        typeof host !== "string" ||
+        !host.trim()
+      ) {
+        console.error("[MOD] RemoveBook: invalid id or host");
+        return false;
+      }
+
+      const normalizedHost = host.trim();
+      const normalizedId = String(id).trim();
+
+      try {
+        // -------------------------------------------------
+        // 1. Đọc danh sách offline
+        // -------------------------------------------------
+        const list = await MOD.fun.ReadOfflineList();
+
+        if (list === null) {
+          console.error("[MOD] RemoveBook: không đọc được offlineBook, hủy");
+          return false;
+        }
+
+        // -------------------------------------------------
+        // 2. Tìm entry
+        // -------------------------------------------------
+        const entry = list.find(
+          (x) =>
+            x && x.host === normalizedHost && String(x.id) === normalizedId,
+        );
+
+        if (!entry) {
+          console.warn(
+            "[MOD] RemoveBook: không tìm thấy sách trong offlineBook",
+            normalizedHost,
+            normalizedId,
+          );
+          return false;
+        }
+
+        // -------------------------------------------------
+        // 3. Kiểm tra key
+        // -------------------------------------------------
+        const keys = MOD.fun.ValidateBookKeys(
+          normalizedHost,
+          normalizedId,
+          entry,
+        );
+
+        if (!keys) {
+          console.error("[MOD] RemoveBook: book keys không hợp lệ");
+          return false;
+        }
+
+        const { bookKey, chapterPre, chapterStore } = keys;
+
+        const chapterinfo = `chapterList_${normalizedHost}_${normalizedId}`;
+
+        const bookinfo = `/mobile/bookinfo.php?hid=${normalizedId}&host=${normalizedHost}`;
+
+        // -------------------------------------------------
+        // 4. Xóa dữ liệu
+        // -------------------------------------------------
+        let hasError = false;
+
+        const steps = [
+          ["files", bookKey, false],
+          ["files", chapterStore, false],
+          ["files", chapterPre, true],
+          ["tmpcache", chapterinfo, false],
+          ["tmpcache", bookinfo, false],
+        ];
+
+        for (const [table, key, like] of steps) {
+          const ok = await MOD.fun.RemoveSQL(table, key, like);
+
+          if (!ok) {
+            hasError = true;
+
+            console.error("[MOD] RemoveBook: xóa thất bại", table, key);
+          }
+        }
+
+        // -------------------------------------------------
+        // 5. Xóa entry khỏi offlineBook
+        // Đọc lại dữ liệu mới nhất trước khi cập nhật.
+        // -------------------------------------------------
+        const removed = await MOD.fun.RemoveOfflineBookEntryNow(
+          normalizedHost,
+          normalizedId,
+        );
+
+        if (!removed) {
+          hasError = true;
+
+          console.error("[MOD] RemoveBook: cập nhật offlineBook thất bại");
+        }
+
+        // -------------------------------------------------
+        // 6. Kết quả
+        // -------------------------------------------------
+        if (hasError) {
+          console.warn(
+            "[MOD Delete] Xóa chưa hoàn tất:",
+            normalizedHost,
+            normalizedId,
+          );
+
+          return false;
+        }
+
+        console.log("[MOD Delete] Đã xóa sách:", normalizedHost, normalizedId);
+
+        return true;
+      } catch (e) {
+        console.error("[MOD] RemoveBook Error:", e);
+        return false;
+      }
+    });
+  };
+  // =====================================================
+  // XÓA DIV CHỨA SÁCH ĐÃ DOWNLOAD
+  // =====================================================
+  MOD.fun.RemoveBookDiv = function (button) {
+    if (!button || typeof button.closest !== "function") {
+      console.error("[MOD] RemoveBookDiv: invalid button");
+      return false;
+    }
+
+    const div = button.closest('div.bookrowcont[view="bookdownloadedrow"]');
+
+    if (!div) {
+      console.warn("[MOD] RemoveBookDiv: không tìm thấy bookrowcont");
+      return false;
+    }
+
+    div.remove();
+    return true;
+  };
   MOD.renderGroup();
 })();
